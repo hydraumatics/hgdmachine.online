@@ -1,0 +1,25 @@
+---
+import { Badge } from "@/components/starwind/badge";
+import { fromPrice, type Product } from "@/lib/shopify";
+import { imgUrl, isQuoteOnly, money } from "@/lib/utils";
+
+interface Props { p: Product; headingLevel?: "h2" | "h3" }
+const { p, headingLevel: H = "h2" } = Astro.props;
+const quote = isQuoteOnly(p.variants.map((v) => Number(v.price.amount)), p.tags);
+---
+
+<a href={`/products/${p.handle}`} class="bg-card border-border hover:border-primary motion-safe:hover:-translate-y-0.5 flex h-full flex-col overflow-hidden rounded-xl border transition focus-visible:-translate-y-0.5">
+  <div class="bg-muted grid aspect-[4/3] place-items-center">
+    {p.featuredImage
+      ? <img src={imgUrl(p.featuredImage.url, 500)} alt={p.featuredImage.altText ?? p.title} loading="lazy" width="500" height="375" class="h-full w-full object-cover" transition:name={`img-${p.handle}`} />
+      : <span class="font-heading text-muted-foreground px-4 text-center text-2xl">{p.productType}</span>}
+  </div>
+  <div class="flex flex-1 flex-col gap-1 p-4">
+    <span class="text-muted-foreground text-xs tracking-wide uppercase">{p.productType}</span>
+    <H class="text-xl leading-tight font-bold">{p.title}</H>
+    <div class="mt-auto flex items-center justify-between pt-2">
+      <span class="font-semibold">{quote ? "Quote on request" : money(fromPrice(p), p.variants[0].price.currencyCode)}</span>
+      {p.tags.includes("Fast-Moving") && <Badge variant="primary" size="sm">Fast-moving</Badge>}
+    </div>
+  </div>
+</a>

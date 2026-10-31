@@ -1,0 +1,158 @@
+---
+import { Button } from "@/components/starwind/button";
+import { Card, CardContent } from "@/components/starwind/card";
+import { Checkbox } from "@/components/starwind/checkbox";
+import { Input } from "@/components/starwind/input";
+import { Label } from "@/components/starwind/label";
+import { NativeSelect } from "@/components/starwind/native-select";
+import { Textarea } from "@/components/starwind/textarea";
+import Base from "@/layouts/Base.astro";
+import ProductCard from "@/components/ProductCard.astro";
+import { getAllProducts, isInsurance } from "@/lib/shopify";
+
+const cards = [
+  ["Heavy machinery", "division-machinery", "Yellow excavator working at an open-pit mine", "Excavators, wheel loaders, dozers, graders, dump trucks, LHDs, drilling rigs and crushing plant."],
+  ["Hydraulics and drivetrain", "division-hydraulics", "Hydraulic cylinders and pumps on a workshop bench", "Pumps, motors, cylinders, valves, hoses, fittings, gearboxes, final drives and torque converters."],
+  ["Spare parts and undercarriage", "division-parts", "Undercarriage rollers, track chain and bucket teeth", "Engine parts, bearings, seals, track chain, rollers, cutting edges, bucket teeth and wear parts."],
+  ["Consumables", "division-consumables", "Drums of oil, grease and filters on a store shelf", "Filters, lubricants, greases, coolants, tyres, fasteners, welding supplies and conveyor components."],
+  ["Electrical, power and solar", "division-power", "Solar panels and a diesel generator at a mine site", "Generators, cables, switchgear, PLCs and drives, lighting, inverters, batteries and solar systems."],
+  ["Safety and site supplies", "division-safety", "Hard hats, hi-vis vests and safety boots", "PPE, fire protection, spill kits, first aid, signage, fencing and security equipment."],
+];
+const facts = [["PACRA registered", "Reg. No. 320220041698"], ["ZRA TPIN", "1007272167"], ["Based in Choma", "Serving Lusaka, Copperbelt and Solwezi"], ["Mining-led", "Managed by Kelly Mafuta, 25+ years in mining"]];
+const steps = ["Send make, model, serial number and part number where you have them.", "We confirm fitment and quote OEM or quality aftermarket options.", "You approve the quotation or issue a purchase order.", "We procure, clear and deliver, and keep you updated on dates.", "Delivery is to your mine site, workshop or depot, or collection by arrangement."];
+const why = [["Built around uptime", "When a machine is down, time matters. We source back-to-back, tell you the lead time up front and keep you updated until the goods arrive."], ["Multi-brand flexibility", "OEM and quality aftermarket options for Caterpillar, Komatsu, Hitachi, Volvo and other makes, so you can choose between price, speed and warranty."], ["Clear, fair terms", "Orders run under Incoterms 2020, with manufacturer and supplier warranties passed on to you and every term stated on the quotation."]];
+const logistics = [["Sea ports", ["Durban", "Dar es Salaam", "Walvis Bay"]], ["Border entry points", ["Kazungula", "Chirundu", "Nakonde"]], ["Delivery destinations", ["Solwezi (North-Western Province)", "Kitwe and Chingola (Copperbelt)", "Regional SADC sites"]]] as const;
+const featured = (await getAllProducts()).filter((p) => !isInsurance(p) && p.tags.includes("Fast-Moving")).slice(0, 8);
+const tagFor: Record<string, string> = { "Heavy machinery": "Heavy Machinery & Earthmoving", "Hydraulics and drivetrain": "Hydraulic Systems", "Spare parts and undercarriage": "Spare Parts & Components", "Consumables": "Industrial Consumables", "Electrical, power and solar": "Electrical & Energy Systems", "Safety and site supplies": "Safety & Site Supplies" };
+const faqs = [
+  ["How do I get a price?", "Use the quote form with your part numbers or equipment model, or email procurement@hydraumatics.zm. We reply by email, usually within one working day. Stocked items show a price in the shop; special-order equipment is quoted on request."],
+  ["Do you supply OEM or aftermarket parts?", "Both, where available. Each quotation states which is offered, so you can choose between price, speed and warranty."],
+  ["How long does delivery take?", "Most items are sourced to order, so lead times depend on the item and the supplier. Every quotation states the lead time. Dates are estimates, and we update you as the goods move."],
+  ["How do I pay?", "Unless a credit account has been agreed in writing, goods are paid for in advance or against a pro-forma invoice. Online shop orders are paid on Shopify’s secure checkout."],
+  ["Can I insure my shipment?", "Yes. Product pages offer optional cover such as overseas freight and inland road transport, subject to the insurer’s policy terms and exclusions."],
+  ["Do you deliver to mine sites?", "Yes. Where quoted we deliver to your site entrance (DAP), including Solwezi, the Copperbelt and regional sites. Unloading is arranged separately unless quoted."],
+  ["Can I return an item?", "Faulty, damaged or wrong items reported within 3 working days will be repaired, replaced or credited after inspection. Special-order, custom and fitted items cannot be returned for change of mind."],
+  ["Do you supply explosives?", "No. We do not supply explosives or blasting agents."],
+];
+const org = { "@context": "https://schema.org", "@type": "Organization", name: "Hydraumatics General Dealers", url: "https://www.hydraumatics.zm", email: "info@hydraumatics.zm", taxID: "1007272167", address: { "@type": "PostalAddress", addressLocality: "Choma", addressCountry: "ZM" }, areaServed: ["Zambia", "SADC"] };
+const faqLd = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faqs.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
+const h2 = "text-4xl font-bold md:text-5xl";
+---
+
+<Base>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(org)} />
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(faqLd)} />
+  <section class="bg-brand relative isolate overflow-hidden text-white">
+    <img src="/images/hero.jpg" alt="" width="1920" height="1080" fetchpriority="high" decoding="async" class="absolute inset-0 -z-20 h-full w-full object-cover" onerror="this.remove()" />
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-[#0a1f2e]/95 via-[#0a1f2e]/80 to-[#0a1f2e]/35" aria-hidden="true"></div>
+    <div class="mx-auto max-w-6xl px-5 py-16 md:py-28">
+      <p class="text-primary mb-3 text-sm font-semibold tracking-widest uppercase">Mining and industrial supply · Zambia</p>
+      <h1 class="max-w-3xl text-5xl font-bold md:text-7xl">Hydraulics, parts and equipment for Zambian mines.</h1>
+      <p class="mt-5 max-w-xl text-lg opacity-90">We source and supply heavy equipment, hydraulic components, spare parts, lubricants, filters and safety gear for mines, contractors and fleets. Send us a part number or a parts list and we will quote it.</p>
+      <form action="/shop" method="get" role="search" class="mt-8 flex max-w-xl flex-col gap-2 sm:flex-row">
+        <label class="sr-only" for="hero-q">Search the catalogue</label>
+        <Input id="hero-q" name="q" type="search" placeholder="Search products, e.g. hydraulic pump" autocomplete="off" class="bg-white text-black" />
+        <Button type="submit" variant="primary" size="lg">Search</Button>
+      </form>
+      <p class="mt-3 text-sm opacity-90">Can’t find it? <a class="underline" href="#quote">Send us the part number</a> and we will source it.</p>
+    </div>
+  </section>
+
+  <section class="bg-card border-border border-b"><dl class="mx-auto grid max-w-6xl gap-4 px-5 py-5 sm:grid-cols-2 lg:grid-cols-4">{facts.map(([a, b]) => <div class="text-sm"><dt class="text-base font-semibold">{a}</dt><dd class="text-muted-foreground">{b}</dd></div>)}</dl></section>
+
+  <section id="divisions" class="mx-auto max-w-6xl px-5 pt-16">
+    <h2 class={h2}>What we supply</h2>
+    <p class="text-muted-foreground mt-2 max-w-2xl">Six product and service areas, covering everything a workshop, mine store or contractor orders repeatedly.</p>
+    <ul class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {cards.map(([t, f, alt, d]) => (
+        <li><Card class="hover:border-primary relative h-full gap-0 overflow-hidden p-0 transition-colors">
+          <div class="bg-muted aspect-[4/3]"><img src={`/images/${f}.jpg`} alt={alt} width="800" height="600" loading="lazy" class="h-full w-full object-cover" onerror="this.remove()" /></div>
+          <CardContent class="p-5"><h3 class="text-2xl font-bold"><a href={`/shop?tag=${encodeURIComponent(tagFor[t])}`} class="after:absolute after:inset-0">{t}</a></h3><p class="text-muted-foreground mt-1.5 text-[.95rem]">{d}</p><p class="text-primary-accent mt-3 text-sm font-semibold" aria-hidden="true">Browse →</p></CardContent>
+        </Card></li>
+      ))}
+    </ul>
+    <p class="text-muted-foreground mt-6 text-sm">Technical services: part number cross-referencing, serial-number fitment checks and sourcing of items not in stock.</p>
+  </section>
+
+  {featured.length > 0 && (
+    <section id="popular" class="mx-auto max-w-6xl px-5 pt-20">
+      <div class="flex flex-wrap items-end justify-between gap-3"><h2 class={h2}>Popular supplies</h2><a href="/shop" class="text-primary-accent font-semibold underline">View the whole catalogue</a></div>
+      <ul class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{featured.map((p) => <li><ProductCard p={p} headingLevel="h3" /></li>)}</ul>
+    </section>
+  )}
+
+  <section id="why" class="mx-auto max-w-6xl px-5 pt-20">
+    <h2 class={h2}>Why Hydraumatics</h2>
+    <ul class="mt-8 grid gap-5 md:grid-cols-3">{why.map(([t, d], i) => <li><Card class="h-full"><CardContent><span class="font-heading text-primary-accent text-5xl">0{i + 1}</span><h3 class="mt-1 text-2xl font-bold">{t}</h3><p class="text-muted-foreground mt-2">{d}</p></CardContent></Card></li>)}</ul>
+  </section>
+
+  <section id="how" class="mx-auto grid max-w-6xl gap-10 px-5 pt-20 md:grid-cols-2">
+    <div>
+      <h2 class={h2}>How we work</h2>
+      <p class="text-muted-foreground mt-4">Most of what we supply is sourced to order. That keeps prices competitive and lets us find hard-to-get parts, but it means lead times depend on the item and the supplier.</p>
+      <p class="text-muted-foreground mt-3">Every quotation states the price, currency, validity period, lead time, warranty terms and delivery terms (Incoterms 2020) before you commit.</p>
+    </div>
+    <div>
+      <ol class="space-y-4">{steps.map((s, i) => <li class="flex gap-3"><span class="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-full font-semibold" aria-hidden="true">{i + 1}</span><span>{s}</span></li>)}</ol>
+      <img src="/images/how-we-work.jpg" alt="Technician checking a hydraulic part against a parts list" width="1280" height="720" loading="lazy" class="mt-6 aspect-video w-full rounded-xl object-cover" onerror="this.remove()" />
+    </div>
+  </section>
+
+  <section id="logistics" class="mx-auto max-w-6xl px-5 pt-20">
+    <h2 class={h2}>Logistics and mine-site delivery</h2>
+    <p class="text-muted-foreground mt-3 max-w-2xl">We can arrange transport from the major sea ports through the main border entry points to your site, and deliver to the site entrance (DAP) where quoted.</p>
+    <ul class="mt-8 grid gap-5 md:grid-cols-3">{logistics.map(([t, list]) => <li><Card class="h-full"><CardContent><h3 class="text-2xl font-bold">{t}</h3><ul class="mt-2 space-y-1">{list.map((x) => <li class="flex gap-2"><span class="text-primary-accent" aria-hidden="true">▸</span>{x}</li>)}</ul></CardContent></Card></li>)}</ul>
+  </section>
+
+  <section id="leadership" class="mx-auto max-w-6xl px-5 pt-20">
+    <div class="bg-brand text-brand-foreground flex flex-col gap-6 rounded-xl p-6 md:flex-row md:p-8">
+      <div class="bg-primary text-primary-foreground font-heading flex size-20 shrink-0 items-center justify-center rounded-full text-3xl" aria-hidden="true">KM</div>
+      <div><h2 class="text-4xl font-bold">Leadership</h2><p class="mt-2 font-semibold">Kelly Mafuta, Managing Director and mining specialist</p>
+        <p class="mt-2 max-w-2xl opacity-90">Kelly brings more than 25 years of hands-on technical and operational mining experience across Africa. Hydraumatics exists to connect global equipment manufacturers with frontline African mine operations through transparent pricing and high safety standards.</p></div>
+    </div>
+  </section>
+
+  <section id="faq" class="mx-auto max-w-3xl px-5 pt-20">
+    <h2 class={h2}>Questions buyers ask</h2>
+    <div class="border-border mt-6 divide-y border-y">
+      {faqs.map(([q, a]) => (
+        <details class="group py-1">
+          <summary class="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 py-3 text-lg font-semibold [&::-webkit-details-marker]:hidden">{q}<span class="text-primary-accent text-2xl transition-transform group-open:rotate-45" aria-hidden="true">+</span></summary>
+          <p class="text-muted-foreground pb-4">{a}</p>
+        </details>
+      ))}
+    </div>
+    <p class="text-muted-foreground mt-4 text-sm">More detail in our <a class="text-primary-accent underline" href="/legal/terms">terms of sale</a>, <a class="text-primary-accent underline" href="/legal/shipping">shipping policy</a> and <a class="text-primary-accent underline" href="/legal/returns">returns policy</a>.</p>
+  </section>
+
+  <section id="quote" class="mx-auto max-w-3xl px-5 pt-20">
+    <h2 class={h2}>Request a quote</h2>
+    <p class="text-muted-foreground mt-3">Fill in what you know. Our procurement desk replies by email, usually within one working day. To send a parts list or photos, email them to <a class="text-primary-accent underline" href="mailto:procurement@hydraumatics.zm">procurement@hydraumatics.zm</a> and quote the reference you receive here.</p>
+    <form id="rfq" class="bg-card border-border mt-6 grid gap-5 rounded-xl border p-5 md:p-7" action="/api/quote" method="post" hx-post="/api/quote" hx-target="#result" hx-swap="innerHTML" hx-disabled-elt="find button" hx-on::after-request="if(event.detail.xhr.getResponseHeader('X-Sent'))this.reset()">
+      <div class="hp" aria-hidden="true"><label>Leave this empty<input name="website" tabindex="-1" autocomplete="off" /></label></div>
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div class="grid gap-2"><Label for="f-name">Full name and job title</Label><Input id="f-name" name="name" required autocomplete="name" /></div>
+        <div class="grid gap-2"><Label for="f-company">Company or site</Label><Input id="f-company" name="company" required autocomplete="organization" /></div>
+        <div class="grid gap-2"><Label for="f-email">Work email</Label><Input id="f-email" name="email" type="email" required autocomplete="email" /></div>
+        <div class="grid gap-2"><Label for="f-phone">Phone or WhatsApp</Label><Input id="f-phone" name="phone" type="tel" autocomplete="tel" /></div>
+      </div>
+      <div class="grid gap-2"><Label for="details">What do you need? Include part numbers, equipment model and quantities.</Label><Textarea id="details" name="details" rows={6} required /></div>
+      <div class="grid gap-5 sm:grid-cols-2">
+        <div class="grid gap-2"><Label for="f-delivery">Delivery terms</Label><NativeSelect id="f-delivery" name="delivery"><option>Not sure yet</option><option>Collect from our premises</option><option>Delivered to site (DAP)</option><option>Ex-works (EXW)</option></NativeSelect></div>
+        <div class="grid gap-2"><Label for="f-urgency">Urgency</Label><NativeSelect id="f-urgency" name="urgency"><option>Normal</option><option>Urgent (equipment down)</option><option>Planned or scheduled</option></NativeSelect></div>
+      </div>
+      <Checkbox id="f-consent" name="consent" value="yes" required label="I agree that Hydraumatics General Dealers may use these details to prepare a quotation and contact me about it, as described in the Privacy Notice (see link below)." />
+      <p class="text-muted-foreground -mt-3 text-sm"><a class="text-primary-accent underline" href="/legal/privacy">Read the Privacy Notice</a></p>
+      <Button type="submit" variant="primary" size="lg">Send quote request</Button>
+      <div id="result" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+
+  <script>
+    document.addEventListener("astro:page-load", () => {
+      const item = new URLSearchParams(location.search).get("item");
+      const d = document.getElementById("details") as HTMLTextAreaElement | null;
+      if (item && d && !d.value) d.value = `I would like a quotation for: ${item}\nQuantity: \nEquipment make/model/serial: `;
+    });
+  </script>
+</Base>

@@ -1,0 +1,22 @@
+import { defineConfig, devices } from "@playwright/test";
+
+export default defineConfig({
+  testDir: "tests",
+  retries: process.env.CI ? 1 : 0,
+  use: { baseURL: "http://localhost:4321", trace: "on-first-retry" },
+  // Build with the built-in sample catalogue (PUBLIC_SHOPIFY_DOMAIN=mock); Shopify calls are intercepted in the tests.
+  webServer: {
+    command: "npm run build && npm run preview -- --port 4321",
+    url: "http://localhost:4321",
+    reuseExistingServer: !process.env.CI,
+    timeout: 300_000,
+    env: { PUBLIC_SHOPIFY_DOMAIN: "mock", PUBLIC_SHOPIFY_STOREFRONT_TOKEN: "mock" },
+  },
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    { name: "webkit", use: { ...devices["Desktop Safari"] } },
+    { name: "mobile-safari", use: { ...devices["iPhone 14"] } },
+    { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
+  ],
+});

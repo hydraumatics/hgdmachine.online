@@ -1,0 +1,62 @@
+---
+import { Input } from "@/components/starwind/input";
+import { Label } from "@/components/starwind/label";
+import { NativeSelect } from "@/components/starwind/native-select";
+import Base from "@/layouts/Base.astro";
+import ProductCard from "@/components/ProductCard.astro";
+import { getAllProducts, isInsurance } from "@/lib/shopify";
+
+const items = (await getAllProducts()).filter((p) => !isInsurance(p));
+const types = [...new Set(items.map((p) => p.productType).filter(Boolean))].sort();
+---
+
+<Base title="Shop | Hydraumatics General Dealers" description="Browse hydraulics, spare parts, lubricants, filters, tyres, safety gear and equipment for mines and contractors in Zambia.">
+  <section class="mx-auto max-w-6xl px-5 pt-12">
+    <h1 class="text-5xl font-bold">Shop</h1>
+    <p class="text-muted-foreground mt-2 max-w-2xl">Add items to your cart, and add optional transit insurance on each product page. Special-order equipment is quoted on request.</p>
+
+    <form role="search" class="bg-background sticky top-16 z-20 mt-6 grid gap-3 py-3 sm:grid-cols-[1fr_18rem]" onsubmit="return false">
+      <div class="grid gap-1.5"><Label for="q">Search products</Label><Input id="q" type="search" placeholder="Part or equipment name" autocomplete="off" /></div>
+      <div class="grid gap-1.5"><Label for="t">Category</Label><NativeSelect id="t"><option value="">All categories</option>{types.map((t) => <option>{t}</option>)}</NativeSelect></div>
+    </form>
+    <div class="flex flex-wrap items-center gap-3"><p id="count" class="text-muted-foreground text-sm" role="status" aria-live="polite">{items.length} products</p><p id="active-tag" hidden class="bg-muted inline-flex items-center gap-2 rounded-full py-1 pr-1 pl-3 text-sm"><span id="active-tag-label"></span><button type="button" id="clear-tag" class="hover:bg-border rounded-full px-3 py-1 font-medium">Clear filter</button></p></div>
+
+    {items.length === 0 && <p class="bg-muted mt-6 rounded-lg p-4">The catalogue is not connected yet.</p>}
+    <ul id="grid" class="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {items.map((p) => (
+        <li data-s={`${p.title} ${p.productType}`.toLowerCase()} data-t={p.productType} data-tags={p.tags.join("|")}><ProductCard p={p} /></li>
+      ))}
+    </ul>
+  </section>
+
+  <script>
+    document.addEventListener("astro:page-load", () => {
+      const q = document.getElementById("q") as HTMLInputElement | null;
+      const t = document.getElementById("t") as HTMLSelectElement | null;
+      const count = document.getElementById("count");
+      const chip = document.getElementById("active-tag");
+      const chipLabel = document.getElementById("active-tag-label");
+      if (!q || !t || !count || !chip || !chipLabel) return;
+      const params = new URLSearchParams(location.search);
+      let tag = params.get("tag") ?? "";
+      q.value = params.get("q") ?? "";
+      const cards = [...document.querySelectorAll<HTMLElement>("#grid > li")];
+      const apply = () => {
+        const s = q.value.trim().toLowerCase(), ty = t.value;
+        let n = 0;
+        cards.forEach((el) => {
+          const ok = (!s || (el.dataset.s ?? "").includes(s)) && (!ty || el.dataset.t === ty) && (!tag || (el.dataset.tags ?? "").split("|").includes(tag));
+          el.hidden = !ok;
+          if (ok) n++;
+        });
+        count.textContent = `${n} product${n === 1 ? "" : "s"}`;
+        chip.hidden = !tag;
+        chipLabel.textContent = tag ? `Showing: ${tag}` : "";
+      };
+      q.addEventListener("input", apply);
+      t.addEventListener("change", apply);
+      document.getElementById("clear-tag")?.addEventListener("click", () => { tag = ""; apply(); q.focus(); });
+      apply();
+    });
+  </script>
+</Base>

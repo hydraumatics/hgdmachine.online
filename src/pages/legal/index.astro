@@ -1,0 +1,12 @@
+---
+import legal from "@/data/legal.json";
+import Base from "@/layouts/Base.astro";
+---
+
+<Base title="Legal information | Hydraumatics General Dealers">
+  <section class="mx-auto max-w-3xl px-5 py-14">
+    <h1 class="text-5xl font-bold">Legal information</h1>
+    <p class="text-muted-foreground mt-3">Effective 23 October 2026. These notices apply to this website and to quotations and sales by Hydraumatics General Dealers.</p>
+    <ul class="border-border bg-card divide-border mt-8 divide-y rounded-xl border">{Object.entries(legal).map(([slug, v]) => <li><a href={`/legal/${slug}`} class="hover:bg-muted block px-5 py-4 text-lg font-medium">{v.title}</a></li>)}</ul>
+  </section>
+</Base>

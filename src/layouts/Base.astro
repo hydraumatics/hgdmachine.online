@@ -1,0 +1,127 @@
+---
+import { ClientRouter } from "astro:transitions";
+import { SEO } from "astro-seo";
+import Menu from "@tabler/icons/outline/menu-2.svg";
+import Cart from "@tabler/icons/outline/shopping-cart.svg";
+
+import { Button } from "@/components/starwind/button";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/starwind/sheet";
+import "../styles/starwind.css";
+
+interface Props { title?: string; description?: string; type?: string; image?: string }
+const {
+  title = "Hydraumatics General Dealers | Mining & Industrial Supply, Zambia",
+  description = "Hydraulics, heavy equipment, spare parts and industrial consumables for mines, contractors and fleets in Zambia.",
+  type = "website",
+  image,
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const ogImage = image ?? new URL("/images/hero.jpg", Astro.site).href;
+const links = [["/#divisions", "What we supply"], ["/shop", "Shop"], ["/#how", "How we work"], ["/#faq", "FAQ"], ["/#quote", "Get a quote"]];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <SEO
+      title={title}
+      description={description}
+      canonical={canonical}
+      openGraph={{ basic: { title, type, image: ogImage, url: canonical }, optional: { description, siteName: "Hydraumatics General Dealers", locale: "en_ZM" } }}
+      twitter={{ card: "summary_large_image" }}
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" />
+    <script is:inline>
+      // Follow the visitor's system theme before first paint (Starwind uses a .dark class).
+      (() => {
+        const mq = matchMedia("(prefers-color-scheme: dark)");
+        const apply = () => document.documentElement.classList.toggle("dark", mq.matches);
+        apply();
+        document.addEventListener("astro:after-swap", apply);
+        mq.addEventListener("change", apply);
+      })();
+    </script>
+    <script is:inline src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
+    <ClientRouter />
+    <slot name="head" />
+  </head>
+  <body class="bg-background text-foreground flex min-h-screen flex-col">
+    <a href="#main" class="bg-primary text-primary-foreground sr-only z-[100] rounded-md px-4 py-3 font-semibold focus:not-sr-only focus:fixed focus:top-2 focus:left-2">Skip to main content</a>
+
+    <div class="bg-brand text-brand-foreground/90 border-b border-white/10 text-xs">
+      <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-x-6 px-4 py-1.5">
+        <span>Operational base: Choma, Zambia</span>
+        <a class="underline" href="mailto:procurement@hydraumatics.zm">procurement@hydraumatics.zm</a>
+      </div>
+    </div>
+
+    <header class="bg-brand text-brand-foreground sticky top-0 z-30">
+      <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2">
+        <div class="flex items-center gap-1">
+          <SheetTrigger asChild for="nav-sheet" class="inline-flex md:hidden">
+            <Button variant="ghost" size="icon" aria-label="Open menu" class="text-brand-foreground hover:bg-white/10"><Menu class="size-6" aria-hidden="true" /></Button>
+          </SheetTrigger>
+          <a href="/" class="font-heading ml-1 text-xl font-bold md:text-2xl">Hydraumatics <span class="text-primary hidden sm:inline">General Dealers</span></a>
+        </div>
+        <nav aria-label="Main" class="hidden md:block">
+          <ul class="flex gap-6 font-medium">{links.map(([href, label]) => <li><a class="inline-block py-2 opacity-90 hover:opacity-100 hover:underline" href={href}>{label}</a></li>)}</ul>
+        </nav>
+        <SheetTrigger asChild for="cart-sheet" class="inline-flex">
+          <Button variant="primary" data-open-cart aria-label="Open cart"><Cart class="size-5" aria-hidden="true" />Cart<span data-cart-count hidden class="bg-brand text-brand-foreground ml-1 rounded-full px-2 text-xs">0</span></Button>
+        </SheetTrigger>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1" class="flex-1 outline-none"><slot /></main>
+
+    <footer class="bg-brand text-brand-foreground mt-16">
+      <div class="mx-auto grid max-w-6xl gap-8 px-5 py-10 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <div><p class="font-heading text-xl font-bold">Hydraumatics General Dealers</p><p class="text-xs opacity-70">A division of Hydraumatics Africa Services</p><p class="mt-2 opacity-85">Choma, Zambia<br />Serving Lusaka, the Copperbelt, Solwezi and the wider region.</p></div>
+        <div><p class="font-semibold">Contact</p><p class="mt-2 opacity-85"><a class="underline" href="mailto:procurement@hydraumatics.zm">procurement@hydraumatics.zm</a><br /><a class="underline" href="mailto:info@hydraumatics.zm">info@hydraumatics.zm</a></p></div>
+        <div><p class="font-semibold">Shop</p><p class="mt-2 opacity-85"><a class="underline" href="/shop">Catalogue</a><br /><a class="underline" href="/#quote">Request a quote</a></p></div>
+        <div><p class="font-semibold">Legal</p><p class="mt-2 opacity-85">
+          <a class="underline" href="/legal/terms">Terms of sale</a><br /><a class="underline" href="/legal/privacy">Privacy notice</a><br /><a class="underline" href="/legal/returns">Returns and warranty</a><br /><a class="underline" href="/legal/shipping">Shipping and Incoterms</a><br /><a class="underline" href="/legal/tax">Tax and compliance</a><br /><a class="underline" href="/legal">All legal information</a></p></div>
+      </div>
+      <p class="mx-auto max-w-6xl border-t border-white/10 px-5 py-4 text-xs opacity-75">© 2026 Hydraumatics General Dealers. PACRA 320220041698 · TPIN 1007272167. All rights reserved.</p>
+    </footer>
+
+    <Sheet id="nav-sheet">
+      <SheetContent side="left" class="w-full sm:max-w-xs">
+        <SheetHeader><SheetTitle>Menu</SheetTitle></SheetHeader>
+        <nav aria-label="Mobile" class="px-4"><ul class="divide-border divide-y">{links.map(([href, label]) => <li><a data-nav-link class="block py-4 text-lg font-medium" href={href}>{label}</a></li>)}</ul></nav>
+      </SheetContent>
+    </Sheet>
+
+    <Sheet id="cart-sheet">
+      <SheetContent side="right" class="w-full sm:max-w-md">
+        <SheetHeader><SheetTitle>Your cart</SheetTitle></SheetHeader>
+        <ul id="cart-lines" class="min-h-0 flex-1 overflow-y-auto px-4"></ul>
+        <p id="cart-status" class="sr-only" role="status" aria-live="polite"></p>
+        <SheetFooter class="border-border border-t">
+          <div class="flex justify-between text-lg font-semibold"><span>Subtotal</span><span id="cart-subtotal">–</span></div>
+          <p class="text-muted-foreground text-xs">Delivery, duties and taxes are confirmed at checkout or on your quotation. Payment is taken on Shopify’s secure checkout.</p>
+          <Button id="cart-checkout" href="#" variant="primary" size="lg" class="w-full" aria-disabled="true" tabindex="-1">Checkout securely</Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+
+    <script>
+      import { initCart } from "@/lib/cart";
+      document.addEventListener("astro:page-load", () => {
+        initCart();
+        (window as unknown as { htmx?: { process(el: Element): void } }).htmx?.process(document.body);
+        // Close the mobile menu after choosing a link (same-page anchors don't trigger a navigation).
+        document.querySelectorAll<HTMLAnchorElement>("#nav-sheet [data-nav-link]").forEach((a) => {
+          if (a.dataset.bound) return;
+          a.dataset.bound = "1";
+          a.addEventListener("click", () => document.querySelector<HTMLButtonElement>("#nav-sheet [data-slot='sheet-close']")?.click());
+        });
+      });
+    </script>
+  </body>
+</html>
