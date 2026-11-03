@@ -2,7 +2,7 @@ import { PUBLIC_SHOPIFY_API_VERSION as version, PUBLIC_SHOPIFY_DOMAIN as domain,
 import { fixtures } from "./fixtures";
 
 export interface Money { amount: string; currencyCode: string }
-export interface Variant { id: string; title: string; availableForSale: boolean; price: Money }
+export interface Variant { id: string; title: string; sku?: string | null; availableForSale: boolean; price: Money }
 export interface Product {
   id: string; handle: string; title: string; description: string; descriptionHtml: string; productType: string; tags: string[];
   featuredImage: { url: string; altText: string | null; width: number; height: number } | null;
@@ -39,7 +39,7 @@ const PRODUCTS = `query($after:String){products(first:100,after:$after){
   pageInfo{hasNextPage endCursor}
   nodes{id handle title description descriptionHtml productType tags
     featuredImage{url altText width height}
-    variants(first:20){nodes{id title availableForSale price{amount currencyCode}}}}}}`;
+    variants(first:20){nodes{id title sku availableForSale price{amount currencyCode}}}}}}`;
 
 type ProductsResponse = { products: { pageInfo: { hasNextPage: boolean; endCursor: string | null }; nodes: (Omit<Product, "variants"> & { variants: { nodes: Variant[] } })[] } };
 

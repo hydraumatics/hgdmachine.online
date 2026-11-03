@@ -1,0 +1,28 @@
+---
+import { Button } from "@/components/starwind/button";
+import { Input } from "@/components/starwind/input";
+import { Label } from "@/components/starwind/label";
+import Base from "@/layouts/Base.astro";
+---
+
+<Base title="Unsubscribe | Hydraumatics General Dealers" description="Unsubscribe from the Hydraumatics General Dealers newsletter." noindex>
+  <section class="mx-auto max-w-xl px-5 py-14">
+    <h1 class="text-5xl font-bold">Unsubscribe</h1>
+    <p class="text-muted-foreground mt-3">Enter your email address to stop receiving the newsletter. This does not affect quotations or orders.</p>
+    <form id="unsub" class="bg-card border-border mt-8 grid gap-5 rounded-xl border p-5 md:p-7" action="/api/unsubscribe" method="post" hx-post="/api/unsubscribe" hx-target="#unsub-result" hx-swap="innerHTML" hx-disabled-elt="find button">
+      <input type="hidden" name="token" id="unsub-token" value="" />
+      <div class="grid gap-2"><Label for="u-email">Email address</Label><Input id="u-email" name="email" type="email" autocomplete="email" /></div>
+      <Button type="submit" variant="primary" size="lg">Unsubscribe</Button>
+      <div id="unsub-result" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+  <script>
+    document.addEventListener("astro:page-load", () => {
+      const t = new URLSearchParams(location.search).get("t");
+      const hidden = document.getElementById("unsub-token") as HTMLInputElement | null;
+      const email = document.getElementById("u-email") as HTMLInputElement | null;
+      if (t && hidden && email) { hidden.value = t; email.required = false; email.placeholder = "Not needed: your link identifies you"; }
+      else if (email) email.required = true;
+    });
+  </script>
+</Base>

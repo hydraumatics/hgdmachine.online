@@ -1,17 +1,25 @@
 ---
 import legal from "@/data/legal.json";
 import Base from "@/layouts/Base.astro";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import { breadcrumbs } from "@/lib/seo";
+import { site } from "@/lib/site";
 
 export function getStaticPaths() {
-  return Object.entries(legal).map(([slug, v]) => ({ params: { slug }, props: v }));
+  return Object.entries(legal).map(([slug, v]) => ({ params: { slug }, props: { ...v, slug } }));
 }
-const { title, html } = Astro.props;
+const { title, html, slug } = Astro.props;
+const schema = [
+  breadcrumbs([{ name: "Home", path: "/" }, { name: "Legal", path: "/legal" }, { name: title, path: `/legal/${slug}` }]),
+  { "@context": "https://schema.org", "@type": "WebPage", name: title, url: `${site.url}/legal/${slug}`, isPartOf: { "@id": `${site.url}/#website` }, publisher: { "@id": site.orgId } },
+];
 ---
 
-<Base title={`${title} | Hydraumatics General Dealers`}>
+<Base title={`${title} | ${site.name}`} schema={schema}>
   <article class="mx-auto max-w-3xl px-5 py-14">
-    <a href="/legal" class="text-primary-accent text-sm underline">← All legal information</a>
-    <h1 class="mt-3 mb-6 text-5xl font-bold">{title}</h1>
+    <Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Legal", href: "/legal" }, { name: title }]} />
+    <h1 class="mt-4 mb-1 text-5xl font-bold">{title}</h1>
+    <p class="text-muted-foreground mb-6 text-sm">{site.legalNotice}</p>
     <div class="legal-body [&_h4]:mt-5 [&_h4]:mb-1 [&_h4]:font-semibold [&_p]:mb-3 [&_p]:max-w-[70ch] [&_ul]:mb-3 [&_ul]:list-disc [&_ul]:pl-5" set:html={html} />
   </article>
 </Base>

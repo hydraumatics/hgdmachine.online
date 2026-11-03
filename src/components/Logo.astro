@@ -1,0 +1,19 @@
+---
+import { Image } from "astro:assets";
+import { findImage } from "@/lib/images";
+import { site } from "@/lib/site";
+
+interface Props { class?: string; showName?: boolean }
+const { class: className = "", showName = true } = Astro.props;
+const { meta, publicSrc } = findImage("logo");
+---
+
+<span class:list={["inline-flex items-center gap-2.5", className]}>
+  {meta
+    ? <Image src={meta} alt="" height={72} class="h-9 w-auto rounded-md" loading="eager" />
+    : publicSrc
+      ? <img src={publicSrc} alt="" height="36" class="h-9 w-auto" />
+      : <svg viewBox="0 0 64 64" class="size-9 shrink-0" aria-hidden="true"><rect width="64" height="64" rx="12" fill="#CF9931" /><path d="M18 14v36M46 14v36M18 32h28" stroke="#0F2A43" stroke-width="8" stroke-linecap="round" fill="none" /></svg>}
+  {showName && <span class="font-heading text-xl leading-none font-bold md:text-2xl">Hydraumatics <span class="text-primary hidden sm:inline">General Dealers</span><span class="sr-only sm:hidden"> General Dealers</span></span>}
+  {!showName && <span class="sr-only">{site.name}</span>}
+</span>

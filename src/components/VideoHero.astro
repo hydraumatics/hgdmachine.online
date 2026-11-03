@@ -1,0 +1,38 @@
+---
+// Decorative looping background video: WebM first (small), MP4 fallback, poster image while loading.
+// Accessible: muted, no audio, hidden from screen readers, has a Pause button (WCAG 2.2.2), respects "reduce motion".
+// Create the files with `npm run media` (see media-src/README.md).
+interface Props { name: string; class?: string }
+const { name, class: className = "" } = Astro.props;
+const base = `/media/${name}`;
+---
+
+<div class:list={["video-hero relative isolate overflow-hidden", className]} style={`background:#0f2a43 url(${base}.jpg) center/cover no-repeat`} data-video-hero>
+  <video class="absolute inset-0 -z-10 h-full w-full object-cover" autoplay muted loop playsinline preload="metadata" poster={`${base}.jpg`} aria-hidden="true" tabindex="-1">
+    <source src={`${base}.webm`} type="video/webm" />
+    <source src={`${base}.mp4`} type="video/mp4" />
+  </video>
+  <button type="button" data-video-toggle aria-pressed="false" class="video-toggle bg-brand/80 absolute right-3 bottom-3 z-10 min-h-11 rounded-md px-4 text-sm font-semibold text-white backdrop-blur">Pause video</button>
+  <slot />
+</div>
+
+<style>
+  @media (prefers-reduced-motion: reduce) {
+    .video-hero video, .video-toggle { display: none; }
+  }
+</style>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    document.querySelectorAll<HTMLElement>("[data-video-hero]").forEach((box) => {
+      const v = box.querySelector("video"), b = box.querySelector<HTMLButtonElement>("[data-video-toggle]");
+      if (!v || !b || b.dataset.bound) return;
+      b.dataset.bound = "1";
+      const conn = (navigator as unknown as { connection?: { saveData?: boolean } }).connection;
+      if (conn?.saveData) v.pause(); // visitor asked to save data
+      const sync = () => { b.textContent = v.paused ? "Play video" : "Pause video"; b.setAttribute("aria-pressed", String(v.paused)); };
+      b.addEventListener("click", () => { void (v.paused ? v.play() : v.pause()); sync(); });
+      v.addEventListener("pause", sync); v.addEventListener("play", sync); sync();
+    });
+  });
+</script>

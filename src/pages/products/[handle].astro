@@ -6,7 +6,10 @@ import { Input } from "@/components/starwind/input";
 import { Label } from "@/components/starwind/label";
 import { NativeSelect } from "@/components/starwind/native-select";
 import Base from "@/layouts/Base.astro";
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
 import { getAllProducts, isInsurance, type Product } from "@/lib/shopify";
+import { breadcrumbs } from "@/lib/seo";
+import { site } from "@/lib/site";
 import { imgUrl, isQuoteOnly, money } from "@/lib/utils";
 
 export async function getStaticPaths() {
@@ -23,24 +26,26 @@ const data = {
   variants: p.variants.map((v) => ({ id: v.id, title: v.title, price: Number(v.price.amount) })),
   ins: ins.map((i) => ({ title: i.title, desc: i.description, variants: i.variants.map((v) => ({ id: v.id, title: v.title, price: Number(v.price.amount) })) })),
 };
-const jsonLd = {
-  "@context": "https://schema.org", "@type": "Product", name: p.title, description: p.description || p.title, sku: p.handle, category: p.productType,
-  brand: { "@type": "Brand", name: "Hydraumatics General Dealers" },
+const url = new URL(`/products/${p.handle}`, Astro.site).href;
+const offer = (price: number) => ({ "@type": "Offer", priceCurrency: cur, price: price.toFixed(2), availability: "https://schema.org/InStock", itemCondition: "https://schema.org/NewCondition", url, seller: { "@id": site.orgId } });
+const productLd = {
+  "@context": "https://schema.org", "@type": "Product", "@id": `${url}#product`, name: p.title, description: p.description || p.title, sku: p.variants[0].sku || p.handle, category: p.productType, url,
+  brand: { "@type": "Brand", name: site.name }, manufacturer: { "@id": site.orgId },
   ...(p.featuredImage ? { image: p.featuredImage.url } : {}),
-  ...(!quoteOnly ? { offers: { "@type": "Offer", priceCurrency: cur, price: Math.min(...prices), availability: "https://schema.org/InStock", url: new URL(`/products/${p.handle}`, Astro.site).href } } : {}),
+  ...(!quoteOnly ? { offers: prices.length > 1 ? { "@type": "AggregateOffer", priceCurrency: cur, lowPrice: Math.min(...prices).toFixed(2), highPrice: Math.max(...prices).toFixed(2), offerCount: prices.length, url, seller: { "@id": site.orgId } } : offer(prices[0]) } : {}),
 };
+const schema = [productLd, breadcrumbs([{ name: "Home", path: "/" }, { name: "Shop", path: "/shop" }, { name: p.title, path: `/products/${p.handle}` }])];
 ---
 
-<Base title={`${p.title} | Hydraumatics General Dealers`} description={(p.description || `${p.title} supplied in Zambia.`).slice(0, 155)} type="product" image={p.featuredImage?.url}>
-  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+<Base title={`${p.title} | Hydraumatics General Dealers`} description={(p.description || `${p.title} supplied in Zambia.`).slice(0, 155)} type="product" image={p.featuredImage?.url} schema={schema} mobileCta={false}>
+  <div class="mx-auto max-w-6xl px-5 pt-6"><Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Shop", href: "/shop" }, { name: p.title }]} /></div>
   <section class="mx-auto grid max-w-6xl gap-10 px-5 pt-10 lg:grid-cols-2">
     <div class="bg-card border-border grid aspect-[4/3] place-items-center overflow-hidden rounded-xl border">
       {p.featuredImage ? <img src={imgUrl(p.featuredImage.url, 1000)} alt={p.featuredImage.altText ?? p.title} width="1000" height="750" class="h-full w-full object-cover" transition:name={`img-${p.handle}`} /> : <span class="font-heading text-muted-foreground px-6 text-center text-4xl">{p.productType}</span>}
     </div>
 
     <div>
-      <a href="/shop" class="text-primary-accent text-sm underline">← Back to the shop</a>
-      <p class="text-muted-foreground mt-3 text-xs tracking-wide uppercase">{p.productType}</p>
+      <p class="text-muted-foreground text-xs tracking-wide uppercase">{p.productType}</p>
       <h1 class="text-4xl font-bold md:text-5xl">{p.title}</h1>
       <div class="mt-2 flex gap-2">{p.tags.includes("Fast-Moving") && <Badge variant="primary" size="sm">Fast-moving</Badge>}{p.tags.includes("Special-Order") && <Badge variant="outline" size="sm">Special order</Badge>}</div>
       <p id="price" class="mt-3 text-2xl font-semibold" aria-live="polite">{quoteOnly ? "Quote on request" : ""}</p>

@@ -58,3 +58,39 @@ test("home: FAQ opens with the keyboard", async ({ page, isMobile }) => {
   await page.keyboard.press("Enter");
   await expect(page.locator("#faq details").first()).toHaveAttribute("open", "");
 });
+
+test("newsletter: consent is required, then signup shows a confirmation", async ({ page }) => {
+  await page.route("**/api/newsletter", (route) =>
+    route.fulfill({ status: 200, headers: { "content-type": "text/html", "X-Sent": "1" }, body: '<div class="ok">Thank you. Please check your inbox and confirm your subscription.</div>' }),
+  );
+  await page.goto("/newsletter");
+  await page.getByLabel("Email address").fill("buyer@example.com");
+  await page.getByRole("button", { name: "Subscribe" }).click();
+  await expect(page.getByText("Thank you.")).toHaveCount(0); // blocked by the unticked consent box
+  await page.getByLabel(/send me the Hydraumatics General Dealers newsletter/i).check();
+  await page.getByRole("button", { name: "Subscribe" }).click();
+  await expect(page.getByRole("status").getByText(/check your inbox/)).toBeVisible();
+});
+
+test("theme switch toggles dark mode, remembers it and exposes state", async ({ page }) => {
+  await page.goto("/");
+  const toggle = page.getByRole("button", { name: "Dark theme" });
+  const before = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+  await toggle.click();
+  expect(await page.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(!before);
+  await expect(toggle).toHaveAttribute("aria-pressed", String(!before));
+  await page.reload();
+  expect(await page.evaluate(() => document.documentElement.classList.contains("dark"))).toBe(!before);
+});
+
+test("quote form: success message and reference come back from the API", async ({ page }) => {
+  await page.route("**/api/quote", (route) => route.fulfill({ headers: { "content-type": "text/html", "X-Sent": "1" }, body: '<div class="ok">Thank you, Test. Your request reference is <b>HYD-261031-ABC123</b>.</div>' }));
+  await page.goto("/#quote");
+  await page.getByLabel("Full name and job title").fill("Test Buyer, Procurement");
+  await page.getByLabel("Company or site").fill("Test Mine");
+  await page.getByLabel("Work email").fill("buyer@example.com");
+  await page.getByLabel(/What do you need/).fill("2 x hydraulic pump, Komatsu PC400");
+  await page.getByLabel(/I agree that Hydraumatics/).check();
+  await page.getByRole("button", { name: "Send quote request" }).click();
+  await expect(page.getByRole("status").getByText(/HYD-261031-ABC123/)).toBeVisible();
+});

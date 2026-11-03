@@ -6,8 +6,10 @@
 @theme {
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
-  --font-heading: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
-  --default-font-family: Barlow, "Segoe UI", system-ui, sans-serif;
+  --font-heading: "Big Shoulders", "Arial Narrow", Arial, sans-serif;
+  --default-font-family: "Work Sans", system-ui, "Segoe UI", Arial, sans-serif;
+  --font-serif: "Crimson Pro", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
@@ -78,24 +80,24 @@
 }
 
 :root {
-  --brand: #10293c;
+  --brand: #0f2a43;
   --brand-foreground: #eef3f6;
-  --background: var(--color-white);
-  --foreground: var(--color-neutral-950);
-  --card: var(--color-white);
-  --card-foreground: var(--color-neutral-950);
-  --popover: var(--color-white);
-  --popover-foreground: var(--color-neutral-950);
-  --primary: #e3a21a;
-  --primary-foreground: #1b1405;
-  --primary-accent: #8a5a00;
-  --secondary: var(--color-neutral-200);
-  --secondary-foreground: var(--color-neutral-950);
-  --secondary-accent: var(--color-neutral-950);
-  --muted: var(--color-neutral-100);
-  --muted-foreground: var(--color-neutral-600);
-  --accent: var(--color-neutral-100);
-  --accent-foreground: var(--color-neutral-900);
+  --background: #f6f6f1;
+  --foreground: #242424;
+  --card: #ffffff;
+  --card-foreground: #242424;
+  --popover: #ffffff;
+  --popover-foreground: #242424;
+  --primary: #cf9931;
+  --primary-foreground: #1d1206;
+  --primary-accent: #8a5a24;
+  --secondary: #ebe6da;
+  --secondary-foreground: #242424;
+  --secondary-accent: #242424;
+  --muted: #ebe6da;
+  --muted-foreground: #495c70;
+  --accent: #e4ddcb;
+  --accent-foreground: #242424;
   --info: var(--color-sky-300);
   --info-foreground: var(--color-sky-950);
   --success: var(--color-green-300);
@@ -104,9 +106,9 @@
   --warning-foreground: var(--color-amber-950);
   --error: var(--color-red-700);
   --error-foreground: var(--color-neutral-50);
-  --border: var(--color-neutral-200);
-  --input: var(--color-neutral-200);
-  --outline: var(--color-neutral-400);
+  --border: #d9d3c7;
+  --input: #cfc8b8;
+  --outline: #6b7b8a;
   --radius: 0.625rem;
 
   /* sidebar variables */
@@ -121,24 +123,24 @@
 }
 
 .dark {
-  --brand: #0a1f2e;
+  --brand: #06121f;
   --brand-foreground: #eef3f6;
-  --background: var(--color-neutral-950);
-  --foreground: var(--color-neutral-50);
-  --card: var(--color-neutral-900);
-  --card-foreground: var(--color-neutral-50);
-  --popover: var(--color-neutral-900);
-  --popover-foreground: var(--color-neutral-50);
-  --primary: #e3a21a;
-  --primary-foreground: #1b1405;
-  --primary-accent: #f0b43a;
-  --secondary: var(--color-neutral-800);
-  --secondary-foreground: var(--color-neutral-50);
-  --secondary-accent: var(--color-neutral-50);
-  --muted: var(--color-neutral-800);
-  --muted-foreground: var(--color-neutral-400);
-  --accent: var(--color-neutral-700);
-  --accent-foreground: var(--color-neutral-50);
+  --background: #0a1b2d;
+  --foreground: #e8eff6;
+  --card: #0f2740;
+  --card-foreground: #e8eff6;
+  --popover: #0f2740;
+  --popover-foreground: #e8eff6;
+  --primary: #cf9931;
+  --primary-foreground: #1d1206;
+  --primary-accent: #e3b04b;
+  --secondary: #153454;
+  --secondary-foreground: #e8eff6;
+  --secondary-accent: #e8eff6;
+  --muted: #153454;
+  --muted-foreground: #a3b8cc;
+  --accent: #1b4163;
+  --accent-foreground: #e8eff6;
   --info: var(--color-sky-300);
   --info-foreground: var(--color-sky-950);
   --success: var(--color-green-300);
@@ -147,9 +149,9 @@
   --warning-foreground: var(--color-amber-950);
   --error: var(--color-red-800);
   --error-foreground: var(--color-neutral-50);
-  --border: --alpha(var(--color-neutral-50) / 10%);
-  --input: --alpha(var(--color-neutral-50) / 15%);
-  --outline: var(--color-neutral-500);
+  --border: #24445f;
+  --input: #2b4d6e;
+  --outline: #6f8aa6;
 
   /* sidebars variables */
   --sidebar-background: var(--color-neutral-900);
@@ -177,7 +179,7 @@
 @layer base {
   html { scroll-behavior: smooth; scroll-padding-top: 5rem; scrollbar-gutter: stable; -webkit-text-size-adjust: 100%; }
   body { font-size: 1.0625rem; }
-  h1, h2, h3 { font-family: var(--font-heading); line-height: 1.05; letter-spacing: 0.005em; }
+  h1, h2, h3 { font-family: var(--font-heading); font-weight: 700; line-height: 1.05; letter-spacing: 0.005em; }
   :focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
   input, select, textarea { font-size: max(16px, 1rem); } /* prevents iOS Safari zoom-on-focus */
 }
@@ -186,3 +188,16 @@
 #result .ok { border-color: var(--color-green-600); } #result .err { border-color: var(--color-red-600); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 @media (forced-colors: active) { [data-slot="button"], [data-slot="card"] { border: 1px solid ButtonText; } }
+
+/* Touch targets: Lighthouse/WCAG 2.2 want at least 24x24px for stand-alone links */
+footer a, .topbar a { display: inline-block; padding-block: 0.3rem; }
+.theme-icon-dark { display: none; } .dark .theme-icon-dark { display: block; } .dark .theme-icon-light { display: none; }
+
+/* Brand fonts: self-hosted, subset to Latin (see brand/ and public/fonts). Weight ranges avoid faux-bold. */
+@font-face { font-family: "Big Shoulders"; src: url("/fonts/big-shoulders-700.woff") format("woff"); font-weight: 400 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Work Sans"; src: url("/fonts/work-sans-400.woff") format("woff"); font-weight: 100 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Work Sans"; src: url("/fonts/work-sans-700.woff") format("woff"); font-weight: 600 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Crimson Pro"; src: url("/fonts/crimson-pro-400-italic.woff") format("woff"); font-weight: 100 900; font-style: italic; font-display: swap; }
+@font-face { font-family: "Crimson Pro"; src: url("/fonts/crimson-pro-400.woff") format("woff"); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("/fonts/ibm-plex-mono-400.woff") format("woff"); font-weight: 100 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Mono"; src: url("/fonts/ibm-plex-mono-700.woff") format("woff"); font-weight: 600 900; font-style: normal; font-display: swap; }

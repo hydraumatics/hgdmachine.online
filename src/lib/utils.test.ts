@@ -21,3 +21,15 @@ describe("utils", () => {
     expect(isQuoteOnly([10], [])).toBe(false);
   });
 });
+
+import { breadcrumbs, jsonLdString } from "./seo";
+describe("seo", () => {
+  it("escapes < in JSON-LD so it cannot close the script tag", () => {
+    expect(jsonLdString({ a: "</script><b>" })).not.toContain("</script>");
+    expect(JSON.parse(jsonLdString({ a: "</script>" })).a).toBe("</script>");
+  });
+  it("builds ordered breadcrumbs with absolute URLs", () => {
+    const b = breadcrumbs([{ name: "Home", path: "/" }, { name: "Shop", path: "/shop" }]);
+    expect(b.itemListElement[1]).toMatchObject({ position: 2, item: "https://hgdmachines.online/shop" });
+  });
+});

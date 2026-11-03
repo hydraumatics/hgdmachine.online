@@ -1,0 +1,34 @@
+---
+import { Button } from "@/components/starwind/button";
+import { Checkbox } from "@/components/starwind/checkbox";
+import { Input } from "@/components/starwind/input";
+import { Label } from "@/components/starwind/label";
+import Base from "@/layouts/Base.astro";
+import { breadcrumbs } from "@/lib/seo";
+import { site } from "@/lib/site";
+
+const interests = ["Hydraulics and drivetrain", "Heavy machinery", "Spare parts", "Consumables", "Power and solar", "Safety supplies"];
+const schema = [
+  breadcrumbs([{ name: "Home", path: "/" }, { name: "Newsletter", path: "/newsletter" }]),
+  { "@context": "https://schema.org", "@type": "WebPage", name: "Newsletter", url: `${site.url}/newsletter`, isPartOf: { "@id": `${site.url}/#website` }, publisher: { "@id": site.orgId } },
+];
+---
+
+<Base title="Newsletter | Hydraumatics General Dealers" description="Subscribe for occasional updates on hydraulics, spare parts, equipment supply and safety information for mines and contractors in Zambia." schema={schema}>
+  <section class="mx-auto max-w-2xl px-5 py-14">
+    <h1 class="text-5xl font-bold">Newsletter</h1>
+    <p class="text-muted-foreground mt-3">Occasional emails with new product ranges, supply updates, safety information and company news for mines, contractors and fleets. No spam, and you can unsubscribe at any time.</p>
+    <form id="news" class="bg-card border-border mt-8 grid gap-5 rounded-xl border p-5 md:p-7" action="/api/newsletter" method="post" hx-post="/api/newsletter" hx-target="#news-result" hx-swap="innerHTML" hx-disabled-elt="find button">
+      <div class="hp" aria-hidden="true"><label>Leave this empty<input name="website" tabindex="-1" autocomplete="off" /></label></div>
+      <div class="grid gap-2"><Label for="n-email">Email address</Label><Input id="n-email" name="email" type="email" required autocomplete="email" /></div>
+      <div class="grid gap-2"><Label for="n-name">Name (optional)</Label><Input id="n-name" name="name" autocomplete="name" /></div>
+      <fieldset class="grid gap-3"><legend class="mb-1 text-sm font-medium">I am interested in (optional)</legend>
+        <div class="grid gap-3 sm:grid-cols-2">{interests.map((x, i) => <Checkbox id={`n-int-${i}`} name="interest" value={x} label={x} />)}</div>
+      </fieldset>
+      <Checkbox id="n-consent" name="consent" value="yes" required label="Yes, send me the Hydraumatics General Dealers newsletter. I can unsubscribe at any time." />
+      <p class="text-muted-foreground -mt-2 text-sm">We use your details only to send the newsletter. See the <a class="text-primary-accent underline" href="/legal/newsletter">Newsletter terms</a> and <a class="text-primary-accent underline" href="/legal/privacy">Privacy notice</a>.</p>
+      <Button type="submit" variant="primary" size="lg">Subscribe</Button>
+      <div id="news-result" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+</Base>

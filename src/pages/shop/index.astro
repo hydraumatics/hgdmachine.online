@@ -4,13 +4,16 @@ import { Label } from "@/components/starwind/label";
 import { NativeSelect } from "@/components/starwind/native-select";
 import Base from "@/layouts/Base.astro";
 import ProductCard from "@/components/ProductCard.astro";
+import { breadcrumbs } from "@/lib/seo";
 import { getAllProducts, isInsurance } from "@/lib/shopify";
+import { site } from "@/lib/site";
 
 const items = (await getAllProducts()).filter((p) => !isInsurance(p));
+const schema = [breadcrumbs([{ name: "Home", path: "/" }, { name: "Shop", path: "/shop" }]), { "@context": "https://schema.org", "@type": "CollectionPage", name: "Shop", url: `${site.url}/shop`, isPartOf: { "@id": `${site.url}/#website` }, mainEntity: { "@type": "ItemList", numberOfItems: items.length, itemListElement: items.slice(0, 50).map((p, i) => ({ "@type": "ListItem", position: i + 1, url: `${site.url}/products/${p.handle}`, name: p.title })) } }];
 const types = [...new Set(items.map((p) => p.productType).filter(Boolean))].sort();
 ---
 
-<Base title="Shop | Hydraumatics General Dealers" description="Browse hydraulics, spare parts, lubricants, filters, tyres, safety gear and equipment for mines and contractors in Zambia.">
+<Base title="Shop | Hydraumatics General Dealers" description="Browse hydraulics, spare parts, lubricants, filters, tyres, safety gear and equipment for mines and contractors in Zambia." schema={schema}>
   <section class="mx-auto max-w-6xl px-5 pt-12">
     <h1 class="text-5xl font-bold">Shop</h1>
     <p class="text-muted-foreground mt-2 max-w-2xl">Add items to your cart, and add optional transit insurance on each product page. Special-order equipment is quoted on request.</p>

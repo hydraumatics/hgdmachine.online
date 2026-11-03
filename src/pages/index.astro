@@ -8,7 +8,11 @@ import { NativeSelect } from "@/components/starwind/native-select";
 import { Textarea } from "@/components/starwind/textarea";
 import Base from "@/layouts/Base.astro";
 import ProductCard from "@/components/ProductCard.astro";
+import SiteImage from "@/components/SiteImage.astro";
+import { findImage } from "@/lib/images";
+import { organizationSchema, websiteSchema } from "@/lib/seo";
 import { getAllProducts, isInsurance } from "@/lib/shopify";
+import { site } from "@/lib/site";
 
 const cards = [
   ["Heavy machinery", "division-machinery", "Yellow excavator working at an open-pit mine", "Excavators, wheel loaders, dozers, graders, dump trucks, LHDs, drilling rigs and crushing plant."],
@@ -25,7 +29,7 @@ const logistics = [["Sea ports", ["Durban", "Dar es Salaam", "Walvis Bay"]], ["B
 const featured = (await getAllProducts()).filter((p) => !isInsurance(p) && p.tags.includes("Fast-Moving")).slice(0, 8);
 const tagFor: Record<string, string> = { "Heavy machinery": "Heavy Machinery & Earthmoving", "Hydraulics and drivetrain": "Hydraulic Systems", "Spare parts and undercarriage": "Spare Parts & Components", "Consumables": "Industrial Consumables", "Electrical, power and solar": "Electrical & Energy Systems", "Safety and site supplies": "Safety & Site Supplies" };
 const faqs = [
-  ["How do I get a price?", "Use the quote form with your part numbers or equipment model, or email procurement@hydraumatics.zm. We reply by email, usually within one working day. Stocked items show a price in the shop; special-order equipment is quoted on request."],
+  ["How do I get a price?", "Use the quote form with your part numbers or equipment model, or email procurement@hgdmachines.online. We reply by email, usually within one working day. Stocked items show a price in the shop; special-order equipment is quoted on request."],
   ["Do you supply OEM or aftermarket parts?", "Both, where available. Each quotation states which is offered, so you can choose between price, speed and warranty."],
   ["How long does delivery take?", "Most items are sourced to order, so lead times depend on the item and the supplier. Every quotation states the lead time. Dates are estimates, and we update you as the goods move."],
   ["How do I pay?", "Unless a credit account has been agreed in writing, goods are paid for in advance or against a pro-forma invoice. Online shop orders are paid on Shopify’s secure checkout."],
@@ -34,17 +38,16 @@ const faqs = [
   ["Can I return an item?", "Faulty, damaged or wrong items reported within 3 working days will be repaired, replaced or credited after inspection. Special-order, custom and fitted items cannot be returned for change of mind."],
   ["Do you supply explosives?", "No. We do not supply explosives or blasting agents."],
 ];
-const org = { "@context": "https://schema.org", "@type": "Organization", name: "Hydraumatics General Dealers", url: "https://www.hydraumatics.zm", email: "info@hydraumatics.zm", taxID: "1007272167", address: { "@type": "PostalAddress", addressLocality: "Choma", addressCountry: "ZM" }, areaServed: ["Zambia", "SADC"] };
 const faqLd = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faqs.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
+const owner = findImage("kelly-mafuta");
+const hasOwner = Boolean(owner.meta || owner.publicSrc);
 const h2 = "text-4xl font-bold md:text-5xl";
 ---
 
-<Base>
-  <script slot="head" type="application/ld+json" set:html={JSON.stringify(org)} />
-  <script slot="head" type="application/ld+json" set:html={JSON.stringify(faqLd)} />
+<Base title="Hydraumatics General Dealers | Mining Equipment, Hydraulics & Spare Parts, Zambia" schema={[{ "@context": "https://schema.org", "@graph": [organizationSchema(), websiteSchema(), { "@type": "Person", "@id": `${site.url}/#owner`, name: "Kelly Mafuta", jobTitle: "Managing Director", worksFor: { "@id": site.orgId }, ...(owner.meta ? { image: new URL(owner.meta.src, site.url).href } : {}) }, { "@type": "WebPage", "@id": `${site.url}/#webpage`, url: site.url, name: "Hydraumatics General Dealers", isPartOf: { "@id": `${site.url}/#website` }, about: { "@id": site.orgId } }] }, faqLd]}>
   <section class="bg-brand relative isolate overflow-hidden text-white">
-    <img src="/images/hero.jpg" alt="" width="1920" height="1080" fetchpriority="high" decoding="async" class="absolute inset-0 -z-20 h-full w-full object-cover" onerror="this.remove()" />
-    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-[#0a1f2e]/95 via-[#0a1f2e]/80 to-[#0a1f2e]/35" aria-hidden="true"></div>
+    <SiteImage name="hero" alt="" sizes="100vw" widths={[640, 1024, 1600, 2200]} loading="eager" fetchpriority="high" class="absolute inset-0 -z-20 h-full w-full object-cover" />
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-brand/95 via-brand/80 to-brand/35" aria-hidden="true"></div>
     <div class="mx-auto max-w-6xl px-5 py-16 md:py-28">
       <p class="text-primary mb-3 text-sm font-semibold tracking-widest uppercase">Mining and industrial supply · Zambia</p>
       <h1 class="max-w-3xl text-5xl font-bold md:text-7xl">Hydraulics, parts and equipment for Zambian mines.</h1>
@@ -54,7 +57,7 @@ const h2 = "text-4xl font-bold md:text-5xl";
         <Input id="hero-q" name="q" type="search" placeholder="Search products, e.g. hydraulic pump" autocomplete="off" class="bg-white text-black" />
         <Button type="submit" variant="primary" size="lg">Search</Button>
       </form>
-      <p class="mt-3 text-sm opacity-90">Can’t find it? <a class="underline" href="#quote">Send us the part number</a> and we will source it.</p>
+      <p class="mt-3 text-sm opacity-90">Can’t find it? <a class="inline-block py-1 underline" href="#quote">Send us the part number</a> and we will source it.</p>
     </div>
   </section>
 
@@ -66,7 +69,7 @@ const h2 = "text-4xl font-bold md:text-5xl";
     <ul class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {cards.map(([t, f, alt, d]) => (
         <li><Card class="hover:border-primary relative h-full gap-0 overflow-hidden p-0 transition-colors">
-          <div class="bg-muted aspect-[4/3]"><img src={`/images/${f}.jpg`} alt={alt} width="800" height="600" loading="lazy" class="h-full w-full object-cover" onerror="this.remove()" /></div>
+          <div class="bg-muted aspect-[4/3] overflow-hidden"><SiteImage name={f} alt={alt} sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 100vw" widths={[360, 540, 720]} class="h-full w-full object-cover" /></div>
           <CardContent class="p-5"><h3 class="text-2xl font-bold"><a href={`/shop?tag=${encodeURIComponent(tagFor[t])}`} class="after:absolute after:inset-0">{t}</a></h3><p class="text-muted-foreground mt-1.5 text-[.95rem]">{d}</p><p class="text-primary-accent mt-3 text-sm font-semibold" aria-hidden="true">Browse →</p></CardContent>
         </Card></li>
       ))}
@@ -94,7 +97,7 @@ const h2 = "text-4xl font-bold md:text-5xl";
     </div>
     <div>
       <ol class="space-y-4">{steps.map((s, i) => <li class="flex gap-3"><span class="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-full font-semibold" aria-hidden="true">{i + 1}</span><span>{s}</span></li>)}</ol>
-      <img src="/images/how-we-work.jpg" alt="Technician checking a hydraulic part against a parts list" width="1280" height="720" loading="lazy" class="mt-6 aspect-video w-full rounded-xl object-cover" onerror="this.remove()" />
+      <div class="bg-muted mt-6 aspect-[4/3] overflow-hidden rounded-xl"><SiteImage name="how-we-work" alt="Technician checking a hydraulic part against a parts list" sizes="(min-width: 768px) 540px, 100vw" widths={[480, 800, 1100]} class="h-full w-full object-cover" /></div>
     </div>
   </section>
 
@@ -106,7 +109,7 @@ const h2 = "text-4xl font-bold md:text-5xl";
 
   <section id="leadership" class="mx-auto max-w-6xl px-5 pt-20">
     <div class="bg-brand text-brand-foreground flex flex-col gap-6 rounded-xl p-6 md:flex-row md:p-8">
-      <div class="bg-primary text-primary-foreground font-heading flex size-20 shrink-0 items-center justify-center rounded-full text-3xl" aria-hidden="true">KM</div>
+      {hasOwner ? <SiteImage name="kelly-mafuta" alt="Kelly Mafuta, Managing Director of Hydraumatics General Dealers" sizes="144px" widths={[144, 288]} class="ring-primary size-28 shrink-0 rounded-full object-cover ring-4 md:size-36" /> : <div class="bg-primary text-primary-foreground font-heading flex size-20 shrink-0 items-center justify-center rounded-full text-3xl" aria-hidden="true">KM</div>}
       <div><h2 class="text-4xl font-bold">Leadership</h2><p class="mt-2 font-semibold">Kelly Mafuta, Managing Director and mining specialist</p>
         <p class="mt-2 max-w-2xl opacity-90">Kelly brings more than 25 years of hands-on technical and operational mining experience across Africa. Hydraumatics exists to connect global equipment manufacturers with frontline African mine operations through transparent pricing and high safety standards.</p></div>
     </div>
@@ -127,8 +130,8 @@ const h2 = "text-4xl font-bold md:text-5xl";
 
   <section id="quote" class="mx-auto max-w-3xl px-5 pt-20">
     <h2 class={h2}>Request a quote</h2>
-    <p class="text-muted-foreground mt-3">Fill in what you know. Our procurement desk replies by email, usually within one working day. To send a parts list or photos, email them to <a class="text-primary-accent underline" href="mailto:procurement@hydraumatics.zm">procurement@hydraumatics.zm</a> and quote the reference you receive here.</p>
-    <form id="rfq" class="bg-card border-border mt-6 grid gap-5 rounded-xl border p-5 md:p-7" action="/api/quote" method="post" hx-post="/api/quote" hx-target="#result" hx-swap="innerHTML" hx-disabled-elt="find button" hx-on::after-request="if(event.detail.xhr.getResponseHeader('X-Sent'))this.reset()">
+    <p class="text-muted-foreground mt-3">Fill in what you know. Our procurement desk replies by email, usually within one working day. To send a parts list or photos, email them to <a class="text-primary-accent underline" href="mailto:procurement@hgdmachines.online">procurement@hgdmachines.online</a> and quote the reference you receive here.</p>
+    <form id="rfq" class="bg-card border-border mt-6 grid gap-5 rounded-xl border p-5 md:p-7" action="/api/quote" method="post" hx-post="/api/quote" hx-target="#result" hx-swap="innerHTML" hx-disabled-elt="find button">
       <div class="hp" aria-hidden="true"><label>Leave this empty<input name="website" tabindex="-1" autocomplete="off" /></label></div>
       <div class="grid gap-5 sm:grid-cols-2">
         <div class="grid gap-2"><Label for="f-name">Full name and job title</Label><Input id="f-name" name="name" required autocomplete="name" /></div>

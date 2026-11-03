@@ -1,0 +1,42 @@
+---
+import Breadcrumbs from "@/components/Breadcrumbs.astro";
+import { Button } from "@/components/starwind/button";
+import { Card, CardContent } from "@/components/starwind/card";
+import Base from "@/layouts/Base.astro";
+import { breadcrumbs } from "@/lib/seo";
+import { site } from "@/lib/site";
+
+const desks = [
+  ["Quotations and parts lists", site.emails.procurement, "Send part numbers, equipment make, model and serial numbers."],
+  ["Orders and sales", site.emails.sales, "Questions about an order, delivery or an invoice."],
+  ["Support and complaints", site.emails.support, "Problems with an order, warranty claims, insurance claims, accessibility help."],
+  ["General enquiries", site.emails.info, "Anything else, including supplier and partnership enquiries."],
+  ["Newsletter", site.emails.news, "Subscription questions. You can also unsubscribe at /unsubscribe."],
+];
+const schema = [
+  breadcrumbs([{ name: "Home", path: "/" }, { name: "Contact", path: "/contact" }]),
+  { "@context": "https://schema.org", "@type": "ContactPage", name: "Contact Hydraumatics General Dealers", url: `${site.url}/contact`, isPartOf: { "@id": `${site.url}/#website` }, about: { "@id": site.orgId } },
+];
+---
+
+<Base title="Contact | Hydraumatics General Dealers" description="Contact Hydraumatics General Dealers in Choma, Zambia for quotations, orders, support and general enquiries." schema={schema}>
+  <section class="mx-auto max-w-5xl px-5 pt-8 pb-14">
+    <Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Contact" }]} />
+    <h1 class="mt-4 text-5xl font-bold">Contact us</h1>
+    <p class="text-muted-foreground mt-3 max-w-2xl">We reply by email, usually within one working day. For the fastest quotation, use the <a class="text-primary-accent underline" href="/#quote">quote form</a> or send your part numbers to the quotations desk.</p>
+    <ul class="mt-8 grid gap-5 md:grid-cols-2">
+      <li><Card class="h-full"><CardContent><h2 class="text-2xl font-bold">Phone and WhatsApp</h2><p class="text-muted-foreground mt-1">Call or message us for urgent enquiries.</p><p class="mt-3"><a class="text-primary-accent inline-block py-1 font-semibold underline" href={`tel:${site.phoneTel}`}>{site.phone}</a> · <a class="text-primary-accent inline-block py-1 font-semibold underline" href={site.whatsapp} rel="noopener">WhatsApp chat</a></p></CardContent></Card></li>
+      {desks.map(([t, mail, d]) => <li><Card class="h-full"><CardContent><h2 class="text-2xl font-bold">{t}</h2><p class="text-muted-foreground mt-1">{d}</p><p class="mt-3"><a class="text-primary-accent inline-block py-1 font-semibold underline" href={`mailto:${mail}`}>{mail}</a></p></CardContent></Card></li>)}
+    </ul>
+    <div class="bg-card border-border mt-8 rounded-xl border p-6">
+      <h2 class="text-2xl font-bold">Company details</h2>
+      <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-2">
+        <div><dt class="text-muted-foreground text-sm">Trading name</dt><dd>{site.name}</dd></div>
+        <div><dt class="text-muted-foreground text-sm">Headquarters</dt><dd>Choma · Kitwe · Lusaka, Zambia</dd></div>
+        <div><dt class="text-muted-foreground text-sm">PACRA registration</dt><dd>{site.pacra}</dd></div>
+        <div><dt class="text-muted-foreground text-sm">ZRA TPIN</dt><dd>{site.taxId}</dd></div>
+      </dl>
+      <p class="text-muted-foreground mt-4 text-sm">Serving Lusaka, the Copperbelt, Solwezi and the wider region. See the <a class="text-primary-accent underline" href="/legal/company">company details</a> and <a class="text-primary-accent underline" href="/legal">legal information</a>.</p>
+    </div>
+  </section>
+</Base>

@@ -1,31 +1,49 @@
-// Cloudflare Pages Function: POST /api/quote  (returns HTML for htmx)
-// One env var needed: WEB3FORMS_KEY
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
-const clip = (s, n) => String(s ?? "").trim().slice(0, n);
-const msg = (cls, text) => `<div class="${cls}">${text}</div>`;
+// POST /api/quote: stores the customer + request in D1, emails the team, optionally acknowledges the customer.
+// Env: DB (D1 binding), WEB3FORMS_KEY or RESEND_API_KEY+MAIL_FROM, optional STAFF_EMAIL, IP_SALT
+import { EMAIL_RE, clip, esc, guard, makeRef, makeReply, nowIso, notifyStaff, sendEmail } from "../../server/shared.js";
 
-export async function onRequestPost({ request, env }) {
-  const isHtmx = request.headers.get("HX-Request") === "true";
-  const reply = (cls, text, sent = false) => {
-    const body = isHtmx ? msg(cls, text) : `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><body style="font-family:sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem">${msg(cls, text)}<p><a href="/">Back to the site</a></p>`;
-    return new Response(body, { headers: { "content-type": "text/html; charset=utf-8", ...(sent ? { "X-Sent": "1" } : {}) } }); // always 200 so htmx swaps it in
-  };
-  let f; try { f = await request.formData(); } catch { return reply("err", "Something went wrong. Please try again."); }
-  const d = { name:clip(f.get("name"),120), company:clip(f.get("company"),160), email:clip(f.get("email"),160), phone:clip(f.get("phone"),40),
-              details:clip(f.get("details"),5000), delivery:clip(f.get("delivery"),60), urgency:clip(f.get("urgency"),60) };
-  const ref = "HYD-" + new Date().toISOString().slice(2,10).replace(/-/g,"") + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
+const UPSERT_CONTACT = `INSERT INTO contacts (email, name, company, phone) VALUES (?1, ?2, ?3, ?4)
+  ON CONFLICT(email) DO UPDATE SET name = excluded.name, company = excluded.company,
+    phone = COALESCE(NULLIF(excluded.phone, ''), contacts.phone), updated_at = datetime('now')
+  RETURNING id`;
+
+export async function onRequestPost(ctx) {
+  const { request, env } = ctx;
+  const reply = makeReply(request);
+  const g = await guard(request, env, "quote");
+  if (g.blocked) return g.blocked;
+  if (g.limited) return reply("err", "Too many requests from your connection. Please try again later, or email <a href='mailto:procurement@hgdmachines.online'>procurement@hgdmachines.online</a>.");
+
+  let f;
+  try { f = await request.formData(); } catch { return reply("err", "Something went wrong. Please try again."); }
+  const ref = makeRef();
   if (f.get("website")) return reply("ok", `Thank you. Your request reference is <b>${ref}</b>.`, true); // honeypot
-  if (!d.name || !d.company || !d.details || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email) || f.get("consent") !== "yes")
+
+  const d = { name: clip(f.get("name"), 120), company: clip(f.get("company"), 160), email: clip(f.get("email"), 160).toLowerCase(), phone: clip(f.get("phone"), 40),
+    details: clip(f.get("details"), 5000), delivery: clip(f.get("delivery"), 60), urgency: clip(f.get("urgency"), 60) };
+  if (!d.name || !d.company || !d.details || !EMAIL_RE.test(d.email) || f.get("consent") !== "yes")
     return reply("err", "Please complete all required fields, use a valid email address and tick the privacy box.");
-  if (!env.WEB3FORMS_KEY) return reply("err", "The form is not connected yet. Please email <a href='mailto:procurement@hydraumatics.zm'>procurement@hydraumatics.zm</a>.");
-  const message = [`Reference: ${ref}`,`Name and title: ${d.name}`,`Company or site: ${d.company}`,`Email: ${d.email}`,`Phone: ${d.phone||"-"}`,`Delivery terms: ${d.delivery}`,`Urgency: ${d.urgency}`,"Consent: given (Privacy Notice)","","Requirement:",d.details].join("\n");
-  try {
-    const r = await fetch("https://api.web3forms.com/submit", { method:"POST", headers:{ "content-type":"application/json", accept:"application/json" },
-      body: JSON.stringify({ access_key: env.WEB3FORMS_KEY, subject: `${d.urgency.startsWith("Urgent") ? "[URGENT] " : ""}Quote request ${ref}: ${d.company}`, from_name:"Hydraumatics website", name:d.name, email:d.email, message }) });
-    const j = await r.json().catch(() => ({}));
-    if (j.success) return reply("ok", `Thank you, ${esc(d.name)}. Your request reference is <b>${ref}</b>. We will reply by email shortly.`, true);
-    console.log("Web3Forms error:", r.status, JSON.stringify(j));
-  } catch (e) { console.log("Web3Forms fetch failed:", String(e)); }
-  return reply("err", "We could not send your request. Please email <a href='mailto:procurement@hydraumatics.zm'>procurement@hydraumatics.zm</a>.");
+
+  let stored = false;
+  if (env.DB) {
+    try {
+      const c = await env.DB.prepare(UPSERT_CONTACT).bind(d.email, d.name, d.company, d.phone).first();
+      await env.DB.prepare("INSERT INTO quote_requests (ref, contact_id, details, delivery, urgency, consent_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)")
+        .bind(ref, c.id, d.details, d.delivery, d.urgency, nowIso()).run();
+      stored = true;
+    } catch (e) { console.log("D1 write failed:", String(e)); }
+  }
+
+  const text = [`Reference: ${ref}`, `Name and title: ${d.name}`, `Company or site: ${d.company}`, `Email: ${d.email}`, `Phone: ${d.phone || "-"}`,
+    `Delivery terms: ${d.delivery}`, `Urgency: ${d.urgency}`, "Consent: given (Privacy notice)", "", "Requirement:", d.details].join("\n");
+  const notified = await notifyStaff(env, { to: env.STAFF_EMAIL || "procurement@hgdmachines.online", replyTo: d.email, name: d.name, email: d.email, web3formsKey: env.WEB3FORMS_KEY,
+    subject: `${d.urgency.startsWith("Urgent") ? "[URGENT] " : ""}Quote request ${ref}: ${d.company}`, text });
+
+  if (!stored && !notified) return reply("err", "We could not send your request. Please email <a href='mailto:procurement@hgdmachines.online'>procurement@hgdmachines.online</a>.");
+  if (!stored) console.log(`Quote ${ref} was emailed but NOT stored: check the D1 binding`);
+
+  ctx.waitUntil(sendEmail(env, { to: d.email, replyTo: "procurement@hgdmachines.online", subject: `We received your request ${ref}`,
+    html: `<p>Hello ${esc(d.name)},</p><p>Thank you for contacting Hydraumatics General Dealers. We received your request (reference <b>${ref}</b>) and will reply by email, usually within one working day.</p><p>This is an automatic acknowledgement, not a quotation or order confirmation.</p>` }));
+  return reply("ok", `Thank you, ${esc(d.name)}. Your request reference is <b>${ref}</b>. We will reply by email shortly.`, true);
 }
 export const onRequest = () => new Response("Method not allowed", { status: 405 });

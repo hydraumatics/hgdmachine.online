@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const pages = ["/", "/shop", "/products/hydraulic-pumps", "/products/hydraulic-excavators", "/legal", "/legal/terms", "/legal/privacy"];
+const pages = ["/", "/shop", "/products/hydraulic-pumps", "/products/hydraulic-excavators", "/legal", "/legal/terms", "/legal/privacy", "/legal/insurance", "/legal/cookies", "/newsletter", "/unsubscribe", "/contact"];
 const tags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 for (const scheme of ["light", "dark"] as const) {

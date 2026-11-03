@@ -3,17 +3,25 @@ import { ClientRouter } from "astro:transitions";
 import { SEO } from "astro-seo";
 import Menu from "@tabler/icons/outline/menu-2.svg";
 import Cart from "@tabler/icons/outline/shopping-cart.svg";
+import Moon from "@tabler/icons/outline/moon.svg";
+import Sun from "@tabler/icons/outline/sun.svg";
 
+import JsonLd from "@/components/JsonLd.astro";
+import Logo from "@/components/Logo.astro";
+import { isMock } from "@/lib/shopify";
 import { Button } from "@/components/starwind/button";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/starwind/sheet";
 import "../styles/starwind.css";
 
-interface Props { title?: string; description?: string; type?: string; image?: string }
+interface Props { title?: string; description?: string; type?: string; image?: string; schema?: object[]; noindex?: boolean; mobileCta?: boolean }
 const {
   title = "Hydraumatics General Dealers | Mining & Industrial Supply, Zambia",
   description = "Hydraulics, heavy equipment, spare parts and industrial consumables for mines, contractors and fleets in Zambia.",
   type = "website",
   image,
+  schema = [],
+  noindex = false,
+  mobileCta = true,
 } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const ogImage = image ?? new URL("/images/hero.jpg", Astro.site).href;
@@ -33,30 +41,39 @@ const links = [["/#divisions", "What we supply"], ["/shop", "Shop"], ["/#how", "
       openGraph={{ basic: { title, type, image: ogImage, url: canonical }, optional: { description, siteName: "Hydraumatics General Dealers", locale: "en_ZM" } }}
       twitter={{ card: "summary_large_image" }}
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" />
+    <link rel="preload" href="/fonts/work-sans-400.woff" as="font" type="font/woff" crossorigin />
+    <link rel="preload" href="/fonts/big-shoulders-700.woff" as="font" type="font/woff" crossorigin />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#10293c" />
+    <meta name="robots" content={noindex || isMock ? "noindex, nofollow" : "index, follow, max-image-preview:large, max-snippet:-1"} />
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable site summary" />
     <script is:inline>
-      // Follow the visitor's system theme before first paint (Starwind uses a .dark class).
+      // Theme: the visitor's saved choice wins, otherwise follow the system setting. Runs before first paint.
       (() => {
         const mq = matchMedia("(prefers-color-scheme: dark)");
-        const apply = () => document.documentElement.classList.toggle("dark", mq.matches);
+        const saved = () => { try { return localStorage.getItem("hyd_theme"); } catch { return null; } };
+        const apply = () => {
+          const dark = saved() ? saved() === "dark" : mq.matches;
+          document.documentElement.classList.toggle("dark", dark);
+          document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        };
         apply();
         document.addEventListener("astro:after-swap", apply);
         mq.addEventListener("change", apply);
       })();
     </script>
-    <script is:inline src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.4/dist/htmx.min.js"></script>
     <ClientRouter />
+    {schema.map((data) => <JsonLd data={data} />)}
     <slot name="head" />
   </head>
   <body class="bg-background text-foreground flex min-h-screen flex-col">
     <a href="#main" class="bg-primary text-primary-foreground sr-only z-[100] rounded-md px-4 py-3 font-semibold focus:not-sr-only focus:fixed focus:top-2 focus:left-2">Skip to main content</a>
 
-    <div class="bg-brand text-brand-foreground/90 border-b border-white/10 text-xs">
+    {isMock && <div class="bg-primary text-primary-foreground px-4 py-2 text-center text-sm font-medium">Demo catalogue: sample products and prices. Online ordering is not active yet. <a class="underline" href="/#quote">Request a quote</a> instead.</div>}
+    <div class="topbar bg-brand text-brand-foreground/90 border-b border-white/10 text-xs">
       <div class="mx-auto flex max-w-6xl flex-wrap justify-between gap-x-6 px-4 py-1.5">
-        <span>Operational base: Choma, Zambia</span>
-        <a class="underline" href="mailto:procurement@hydraumatics.zm">procurement@hydraumatics.zm</a>
+        <span>Headquarters: Choma · Kitwe · Lusaka</span>
+        <span><a class="underline" href="tel:+260954381230">+260 95 438 1230</a> · <a class="underline" href="mailto:procurement@hgdmachines.online">procurement@hgdmachines.online</a></span>
       </div>
     </div>
 
@@ -66,29 +83,39 @@ const links = [["/#divisions", "What we supply"], ["/shop", "Shop"], ["/#how", "
           <SheetTrigger asChild for="nav-sheet" class="inline-flex md:hidden">
             <Button variant="ghost" size="icon" aria-label="Open menu" class="text-brand-foreground hover:bg-white/10"><Menu class="size-6" aria-hidden="true" /></Button>
           </SheetTrigger>
-          <a href="/" class="font-heading ml-1 text-xl font-bold md:text-2xl">Hydraumatics <span class="text-primary hidden sm:inline">General Dealers</span></a>
+          <a href="/" class="ml-1 inline-flex min-h-11 items-center" aria-label="Hydraumatics General Dealers, home"><Logo /></a>
         </div>
         <nav aria-label="Main" class="hidden md:block">
           <ul class="flex gap-6 font-medium">{links.map(([href, label]) => <li><a class="inline-block py-2 opacity-90 hover:opacity-100 hover:underline" href={href}>{label}</a></li>)}</ul>
         </nav>
-        <SheetTrigger asChild for="cart-sheet" class="inline-flex">
+        <div class="flex items-center gap-1 sm:gap-2">
+          <Button type="button" variant="ghost" size="icon" data-theme-toggle aria-pressed="false" aria-label="Dark theme" class="text-brand-foreground hover:bg-white/10"><Moon class="theme-icon-light size-5" aria-hidden="true" /><Sun class="theme-icon-dark size-5" aria-hidden="true" /></Button>
+          <SheetTrigger asChild for="cart-sheet" class="inline-flex">
           <Button variant="primary" data-open-cart aria-label="Open cart"><Cart class="size-5" aria-hidden="true" />Cart<span data-cart-count hidden class="bg-brand text-brand-foreground ml-1 rounded-full px-2 text-xs">0</span></Button>
         </SheetTrigger>
+        </div>
       </div>
     </header>
 
     <main id="main" tabindex="-1" class="flex-1 outline-none"><slot /></main>
 
-    <footer class="bg-brand text-brand-foreground mt-16">
+    <footer class:list={["bg-brand text-brand-foreground mt-16", mobileCta && "pb-20 md:pb-0"]}>
       <div class="mx-auto grid max-w-6xl gap-8 px-5 py-10 text-sm sm:grid-cols-2 lg:grid-cols-4">
-        <div><p class="font-heading text-xl font-bold">Hydraumatics General Dealers</p><p class="text-xs opacity-70">A division of Hydraumatics Africa Services</p><p class="mt-2 opacity-85">Choma, Zambia<br />Serving Lusaka, the Copperbelt, Solwezi and the wider region.</p></div>
-        <div><p class="font-semibold">Contact</p><p class="mt-2 opacity-85"><a class="underline" href="mailto:procurement@hydraumatics.zm">procurement@hydraumatics.zm</a><br /><a class="underline" href="mailto:info@hydraumatics.zm">info@hydraumatics.zm</a></p></div>
-        <div><p class="font-semibold">Shop</p><p class="mt-2 opacity-85"><a class="underline" href="/shop">Catalogue</a><br /><a class="underline" href="/#quote">Request a quote</a></p></div>
-        <div><p class="font-semibold">Legal</p><p class="mt-2 opacity-85">
-          <a class="underline" href="/legal/terms">Terms of sale</a><br /><a class="underline" href="/legal/privacy">Privacy notice</a><br /><a class="underline" href="/legal/returns">Returns and warranty</a><br /><a class="underline" href="/legal/shipping">Shipping and Incoterms</a><br /><a class="underline" href="/legal/tax">Tax and compliance</a><br /><a class="underline" href="/legal">All legal information</a></p></div>
+        <div><div class="mb-3"><Logo /></div><p class="text-xs opacity-70">A division of Hydraumatics Africa Services</p><p class="font-heading text-primary mt-2 text-lg font-bold">Keeping operations moving across Africa.</p><p class="mt-2 opacity-85">Headquarters: Choma · Kitwe · Lusaka, Zambia<br />Serving Lusaka, the Copperbelt, Solwezi and the wider region.</p></div>
+        <div><p class="font-semibold">Contact</p><ul class="mt-2 space-y-0.5 opacity-90"><li><a class="underline" href="tel:+260954381230">Phone: +260 95 438 1230</a></li><li><a class="underline" href="https://wa.me/260954381230" rel="noopener">WhatsApp chat</a></li><li><a class="underline" href="mailto:procurement@hgdmachines.online">Quotes: procurement@hgdmachines.online</a></li><li><a class="underline" href="mailto:sales@hgdmachines.online">Sales: sales@hgdmachines.online</a></li><li><a class="underline" href="mailto:support@hgdmachines.online">Support: support@hgdmachines.online</a></li><li><a class="underline" href="mailto:info@hgdmachines.online">General: info@hgdmachines.online</a></li></ul></div>
+        <div><p class="font-semibold">Shop and company</p><ul class="mt-2 space-y-0.5 opacity-90"><li><a class="underline" href="/shop">Catalogue</a></li><li><a class="underline" href="/#quote">Request a quote</a></li><li><a class="underline" href="/contact">Contact</a></li><li><a class="underline" href="/newsletter">Newsletter</a></li></ul></div>
+        <div><p class="font-semibold">Legal</p><ul class="mt-2 space-y-0.5 opacity-90"><li><a class="underline" href="/legal/terms">Terms of sale</a></li><li><a class="underline" href="/legal/privacy">Privacy notice</a></li><li><a class="underline" href="/legal/returns">Returns and warranty</a></li><li><a class="underline" href="/legal/shipping">Shipping and Incoterms</a></li><li><a class="underline" href="/legal/tax">Tax and compliance</a></li><li><a class="underline" href="/legal/cookies">Cookies and storage</a></li><li><a class="underline" href="/legal/accessibility">Accessibility</a></li><li><a class="underline" href="/legal">All legal information</a></li></ul></div>
       </div>
       <p class="mx-auto max-w-6xl border-t border-white/10 px-5 py-4 text-xs opacity-75">© 2026 Hydraumatics General Dealers. PACRA 320220041698 · TPIN 1007272167. All rights reserved.</p>
     </footer>
+
+    {mobileCta && (
+      <div class="bg-background/95 border-border fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t p-2 backdrop-blur md:hidden" style="padding-bottom:max(0.5rem,env(safe-area-inset-bottom))">
+        <Button href="/#quote" variant="primary" class="flex-1">Request a quote</Button>
+        <Button href="mailto:procurement@hgdmachines.online" variant="outline" class="flex-1">Email us</Button>
+        <Button href="https://wa.me/260954381230" variant="outline" class="flex-1" rel="noopener">WhatsApp</Button>
+      </div>
+    )}
 
     <Sheet id="nav-sheet">
       <SheetContent side="left" class="w-full sm:max-w-xs">
@@ -112,9 +139,39 @@ const links = [["/#divisions", "What we supply"], ["/shop", "Shop"], ["/#how", "
 
     <script>
       import { initCart } from "@/lib/cart";
+
+      let htmx: typeof import("htmx.org").default | undefined;
+      async function loadHtmx() {
+        if (!document.querySelector("[hx-post]")) return; // forms only: keep htmx off the other pages
+        if (!htmx) {
+          htmx = (await import("htmx.org")).default;
+          htmx.config.allowEval = false; // keeps a strict Content-Security-Policy possible
+          (window as unknown as { htmx: typeof htmx }).htmx = htmx;
+        }
+        htmx.process(document.body);
+      }
+      document.addEventListener("htmx:afterRequest", (e) => {
+        const d = (e as CustomEvent<{ xhr: XMLHttpRequest }>).detail;
+        if (d.xhr.getResponseHeader("X-Sent")) (e.target as HTMLFormElement).reset?.();
+      });
+
+      const syncToggle = () => {
+        const dark = document.documentElement.classList.contains("dark");
+        document.querySelectorAll("[data-theme-toggle]").forEach((b) => b.setAttribute("aria-pressed", String(dark)));
+      };
+      document.addEventListener("click", (e) => {
+        if (!(e.target as HTMLElement).closest("[data-theme-toggle]")) return;
+        const dark = !document.documentElement.classList.contains("dark");
+        try { localStorage.setItem("hyd_theme", dark ? "dark" : "light"); } catch { /* private mode: still switches for this visit */ }
+        document.documentElement.classList.toggle("dark", dark);
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        syncToggle();
+      });
+
       document.addEventListener("astro:page-load", () => {
         initCart();
-        (window as unknown as { htmx?: { process(el: Element): void } }).htmx?.process(document.body);
+        syncToggle();
+        void loadHtmx();
         // Close the mobile menu after choosing a link (same-page anchors don't trigger a navigation).
         document.querySelectorAll<HTMLAnchorElement>("#nav-sheet [data-nav-link]").forEach((a) => {
           if (a.dataset.bound) return;
