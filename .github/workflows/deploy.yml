@@ -8,51 +8,109 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }} # never cancel a running production deploy
 
 permissions:
   contents: read
   deployments: write
-  pull-requests: write
+
+env:
+  # Public build-time settings (see .env.production.example). Set them under Settings > Secrets and variables > Actions > Variables.
+  PUBLIC_SHOPIFY_DOMAIN: ${{ vars.PUBLIC_SHOPIFY_DOMAIN }}
+  PUBLIC_SHOPIFY_STOREFRONT_TOKEN: ${{ vars.PUBLIC_SHOPIFY_STOREFRONT_TOKEN }}
+  PUBLIC_SHOPIFY_API_VERSION: ${{ vars.PUBLIC_SHOPIFY_API_VERSION || '2026-07' }}
+  SITE_URL: ${{ vars.SITE_URL || 'https://hgdmachines.online' }}
 
 jobs:
-  test:
-    name: Tests
+  verify:
+    name: Types + unit tests
     runs-on: ubuntu-latest
+    env:
+      # Types and unit tests never talk to Shopify: use the built-in sample catalogue.
+      PUBLIC_SHOPIFY_DOMAIN: mock
+      PUBLIC_SHOPIFY_STOREFRONT_TOKEN: mock
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest # pin to an exact version once the pipeline is green
+      - uses: actions/setup-node@v4 # Astro and Vitest run on Node; Bun is the package manager and script runner
+        with:
+          node-version-file: .nvmrc
+      - run: bun install --frozen-lockfile
+      - run: bunx astro sync && bun run check
+      - run: bun run images # converts public/images to AVIF + WebP
+      - run: bun run test # vitest: src/, server/ (Functions), scripts/ (image conversion)
 
+  e2e:
+    name: E2E (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { project: chromium, browser: chromium }
+          - { project: firefox, browser: firefox }
+          - { project: webkit, browser: webkit }
+          - { project: mobile-chrome, browser: chromium }
+          - { project: mobile-safari, browser: webkit }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
       - uses: actions/setup-node@v4
         with:
-          node-version: 20          # ANPASSEN
-          cache: npm
-
-      - run: npm ci
-      - run: npm test               # ANPASSEN: dein Test-Befehl
+          node-version-file: .nvmrc
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps ${{ matrix.browser }}
+      - run: bun run test:e2e --project=${{ matrix.project }}
+        env:
+          CI: "true" # playwright.config.ts builds with the mock catalogue and serves the site itself
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
 
   deploy:
-    name: Build & Deploy
-    needs: test                     # Deploy NUR wenn alle Tests gruen sind
+    name: Deploy to Cloudflare Pages
+    needs: [verify, e2e] # only runs when every test above is green
+    # Pull requests from forks have no access to secrets, so they are tested but not deployed.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
       - uses: actions/setup-node@v4
         with:
-          node-version: 20          # ANPASSEN
-          cache: npm
+          node-version-file: .nvmrc
+      - run: bun install --frozen-lockfile
+      - name: Build (converts images first, see "prebuild")
+        run: bun run build # real Shopify catalogue; the build fails on purpose if Shopify is unreachable
 
-      - run: npm ci
-      - run: npm run build          # ANPASSEN (entfaellt bei reiner Static-Site)
-
-      - name: Deploy to Cloudflare Pages
+      - name: Apply D1 migrations
+        # Set the repository variable D1_MIGRATIONS=true after the [[d1_databases]] block in wrangler.toml is enabled.
+        if: github.ref == 'refs/heads/main' && vars.D1_MIGRATIONS == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # main -> Production, Pull Requests/andere Branches -> Preview
-          command: >-
-            pages deploy dist
-            --project-name=hgdmachine-online
-            --branch=${{ github.head_ref || github.ref_name }}
+          command: d1 migrations apply hydraumatics-db --remote
+
+      - name: Deploy (main = production, everything else = preview)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          # Publishes ./dist plus the functions/ folder. The production branch of the Pages project must be "main".
+          command: pages deploy dist --project-name=hydraumatics-store --branch=${{ github.head_ref || github.ref_name }} --commit-hash=${{ github.sha }}
+
