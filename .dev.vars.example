@@ -1,0 +1,8 @@
+# Copy to .dev.vars for `npx wrangler pages dev dist --d1=DB` (never commit .dev.vars)
+WEB3FORMS_KEY=
+NEWSLETTER_WEB3FORMS_KEY=
+ADMIN_TOKEN=change-me-to-a-long-random-string
+IP_SALT=another-long-random-string
+# Optional: real transactional email (double opt-in, customer acknowledgements, staff notifications)
+# RESEND_API_KEY=
+# MAIL_FROM=Hydraumatics General Dealers <noreply@hgdmachines.online>

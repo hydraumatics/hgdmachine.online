@@ -1,0 +1,58 @@
+name: Test & Deploy (Cloudflare Pages)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  deployments: write
+  pull-requests: write
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20          # ANPASSEN
+          cache: npm
+
+      - run: npm ci
+      - run: npm test               # ANPASSEN: dein Test-Befehl
+
+  deploy:
+    name: Build & Deploy
+    needs: test                     # Deploy NUR wenn alle Tests gruen sind
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20          # ANPASSEN
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build          # ANPASSEN (entfaellt bei reiner Static-Site)
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # main -> Production, Pull Requests/andere Branches -> Preview
+          command: >-
+            pages deploy dist
+            --project-name=hgdmachine-online
+            --branch=${{ github.head_ref || github.ref_name }}
