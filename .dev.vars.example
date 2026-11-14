@@ -1,4 +1,4 @@
-# Copy to .dev.vars for `npx wrangler pages dev dist --d1=DB` (never commit .dev.vars)
+# Copy to .dev.vars for `bunx wrangler pages dev dist --d1=DB` (never commit .dev.vars)
 WEB3FORMS_KEY=
 NEWSLETTER_WEB3FORMS_KEY=
 ADMIN_TOKEN=change-me-to-a-long-random-string

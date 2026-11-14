@@ -12,16 +12,16 @@ Static site on Cloudflare Pages. Products and cart come from Shopify's Storefron
 
 ## Start
     nvm use                       # Node 22 (see .nvmrc)
-    npm install
+    bun install
     cp .env.example .env          # add your Shopify values, or set PUBLIC_SHOPIFY_DOMAIN=mock to use sample products
-    npm run dev                   # http://localhost:4321
+    bun run dev                   # http://localhost:4321
 
-## Quality gates (also run in CI: .github/workflows/ci.yml)
-    npm run check                 # Astro + TypeScript type check
-    npm test                      # unit tests (src/lib/utils.test.ts)
-    npm run test:install && npm run test:e2e   # a11y (WCAG 2.2 AA, light+dark), cart flow with a faked Shopify, 320px overflow
-    npm run format                # Prettier (Astro + Tailwind class sorting)
-Commit `package-lock.json` after the first `npm install` so CI can use `npm ci`.
+## Quality gates (also run in CI: .github/workflows/deploy.yml)
+    bun run check                 # Astro + TypeScript type check
+    bun run test                      # unit tests: src/lib, server (Functions with a fake D1), scripts (image conversion)
+    bun run test:install && bun run test:e2e   # a11y (WCAG 2.2 AA, light+dark), cart flow with a faked Shopify, 320px overflow
+    bun run format                # Prettier (Astro + Tailwind class sorting)
+Commit `bun.lock` after every dependency change: CI installs with `bun install --frozen-lockfile` and fails when it is out of date. Use `bun run test`, not `bun test` (the latter starts Bun's own test runner instead of Vitest).
 
 ## Shopify setup
 1. Import `shopify_products_import.csv` (includes 4 insurance products tagged `insurance`). Set real prices and premiums, then make products Active.
@@ -31,23 +31,23 @@ Commit `package-lock.json` after the first `npm install` so CI can use `npm ci`.
 5. Optional: Shopify webhook (products/update) -> Cloudflare deploy hook, so the catalogue rebuilds on changes.
 
 ## Cloudflare Pages
-Build command `npm run build`, output `dist`, `NODE_VERSION=22`.
+Deployed by GitHub Actions (see deploy.md). If you build on Cloudflare instead: build command `bun run build`, output `dist`, `NODE_VERSION=22`.
 Build variables: PUBLIC_SHOPIFY_DOMAIN, PUBLIC_SHOPIFY_STOREFRONT_TOKEN, PUBLIC_SHOPIFY_API_VERSION, SITE_URL. Changing them needs a redeploy.
 Runtime secrets (Settings > Variables and Secrets > Secrets): see `.dev.vars.example`.
 
 ### Database for customers (Cloudflare D1, free tier)
-    npx wrangler login
-    npx wrangler d1 create hydraumatics-db                       # prints a database_id
+    bunx wrangler login
+    bunx wrangler d1 create hydraumatics-db                       # prints a database_id
     # paste the id into wrangler.toml (remove the # in front of the [[d1_databases]] block), or add a D1 binding named DB in the dashboard
-    npx wrangler d1 migrations apply hydraumatics-db --remote    # creates the tables
+    bunx wrangler d1 migrations apply hydraumatics-db --remote    # creates the tables
 Tables: `contacts` (one row per email), `quote_requests` (reference, details, status new/quoted/won/lost), `newsletter_subscribers` (status, proof of consent, unsubscribe token), `rate_limits` (24-hour spam control).
 Browse data in the Cloudflare dashboard (Storage & Databases > D1 > hydraumatics-db > Console), or download CSV:
     curl -H "Authorization: Bearer $ADMIN_TOKEN" "https://hgdmachines.online/api/admin/export?table=quotes" -o quotes.csv
     (tables: quotes, contacts, subscribers; add &status=subscribed for the mailing list). Disabled until you set the ADMIN_TOKEN secret.
 Retention (privacy notice says 24 months for enquiries): run now and then
-    npx wrangler d1 execute hydraumatics-db --remote --command "DELETE FROM contacts WHERE id NOT IN (SELECT contact_id FROM quote_requests WHERE created_at > date('now','-24 months')) AND email NOT IN (SELECT email FROM newsletter_subscribers WHERE status='subscribed')"
+    bunx wrangler d1 execute hydraumatics-db --remote --command "DELETE FROM contacts WHERE id NOT IN (SELECT contact_id FROM quote_requests WHERE created_at > date('now','-24 months')) AND email NOT IN (SELECT email FROM newsletter_subscribers WHERE status='subscribed')"
 Test locally with the real functions:
-    npm run build && npx wrangler d1 migrations apply hydraumatics-db --local && npx wrangler pages dev dist --d1=DB
+    bun run build && bunx wrangler d1 migrations apply hydraumatics-db --local && bunx wrangler pages dev dist --d1=DB
 
 ### Email (pick one; Resend is the better long-term choice)
 **Option A: Resend (recommended).** One provider sends everything: staff notifications (Reply-To = the customer), an acknowledgement to the customer, and the newsletter confirmation email (double opt-in).
@@ -81,7 +81,7 @@ Newsletters themselves are sent from your own tool: export `subscribers&status=s
 `wrangler.toml` holds everything that is safe to commit: project name, output folder, runtime `[vars]` (STAFF_EMAIL, MAIL_FROM) and the D1 binding. Secrets (WEB3FORMS_KEY, NEWSLETTER_WEB3FORMS_KEY, RESEND_API_KEY, ADMIN_TOKEN, IP_SALT) must never be in a file in Git: set them with the `wrangler pages secret put` commands listed in that file, or in the dashboard. Public build-time values for Astro (Shopify domain, Storefront token, API version, SITE_URL) go in `.env.production` (copy `.env.production.example`). While a wrangler file with `[vars]` exists, the dashboard may show those variables as read-only.
 
 ## Images and video
-Photos in `src/assets/images/` become AVIF + WebP + JPEG (several sizes) at build time. Videos: put sources in `media-src/`, run `npm run media` (needs ffmpeg) to create WebM + MP4 + poster in `public/media/`, then use `<VideoHero name="hero">` (WebM first, MP4 fallback, pause button, honours reduced motion). WebM is for video only, images use WebP/AVIF.
+`bun run images` converts every jpg/png in `public/images/` to AVIF + WebP next to the original (max 2400px wide; `--force` redoes all, `--check` only verifies). It runs automatically before `bun run build`; the generated files are git-ignored, and `<SiteImage>` serves them with the JPEG as fallback. Photos in `src/assets/images/` become AVIF + WebP + JPEG (several sizes) at build time. Videos: put sources in `media-src/`, run `bun run media` (needs ffmpeg) to create WebM + MP4 + poster in `public/media/`, then use `<VideoHero name="hero">` (WebM first, MP4 fallback, pause button, honours reduced motion). WebM is for video only, images use WebP/AVIF.
 
 ## Design decisions worth knowing
 - **A production build fails if Shopify is unreachable**, so an empty shop can never be published. Only `PUBLIC_SHOPIFY_DOMAIN=mock` builds sample data.
@@ -98,4 +98,4 @@ Photos in `src/assets/images/` become AVIF + WebP + JPEG (several sizes) at buil
 - Keep marketing claims consistent with the legal text (avoid "genuine OEM", "within 24 hours", "100% compliant").
 
 ## Status
-Written without being able to install packages or run a build. First run: `npm install`, `npm run check`, `npm run dev`, then the tests. Send any errors back and they get fixed.
+Written without being able to install packages or run a build. First run: `bun install`, `bun run check`, `bun run dev`, then the tests. Send any errors back and they get fixed.

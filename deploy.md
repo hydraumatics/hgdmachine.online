@@ -1,22 +1,30 @@
-Ich schaue mir zuerst das Repository an.
+# Deploy pipeline (GitHub Actions -> Cloudflare Pages)
 
-Die Pipeline liegt in `deploy.yml`. Sie gehört nach `.github/workflows/deploy.yml` in dein Repo. Sie läuft in zwei Stufen:
+Workflow: `.github/workflows/deploy.yml`. Package manager and script runner: **Bun**.
 
-1. **Tests** laufen bei jedem Push und jedem Pull Request auf `main`.
-2. **Deploy** hängt per `needs: test` an den Tests und startet nur, wenn alle grün sind. Ein Push auf `main` geht nach Production. Pull Requests und andere Branches bekommen eine Preview-URL.
+    verify  (types + unit tests)  --\
+                                     >-- deploy (build -> wrangler pages deploy dist)
+    e2e     (5 browser projects)  --/
 
-**Einmalig bei dir einrichten:**
-- Lege in Cloudflare ein API-Token an (Rechte: *Account → Cloudflare Pages → Edit*) und trage es in GitHub unter *Settings → Secrets and variables → Actions* als `CLOUDFLARE_API_TOKEN` ein.
-- Trage die Account-ID aus dem Cloudflare-Dashboard als `CLOUDFLARE_ACCOUNT_ID` ein.
-- Lege das Pages-Projekt an, falls es noch nicht existiert (`npx wrangler pages project create hgdmachine-online`). Wenn dein Projekt anders heißt, ändere `--project-name`.
-- Falls Cloudflare das Repo bisher selbst per Git-Integration baut, deaktiviere das. Sonst deployt es doppelt.
+- Push to `main`: production deploy. Pull request: preview deploy (forks are tested, not deployed).
+- `deploy` only starts when `verify` and every `e2e` project are green.
+- `bun run build` first runs `bun run images` (jpg/png -> AVIF + WebP in `public/images`).
 
-**Annahmen, die du prüfen musst (im File mit `ANPASSEN` markiert):**
-- Dein Stack ist Node mit `npm ci`, `npm test` und `npm run build`.
-- Das Build-Ergebnis liegt in `dist`. Bei einer reinen Static-Site ohne Build entfällt `npm run build`, und `dist` wird zum Ordner mit deinen HTML-Dateien, zum Beispiel `.`.
-- Die Domain `hgdmachine.online` hängst du im Cloudflare-Dashboard unter *Pages → Custom domains* an das Projekt.
+## One-time setup
 
-Wenn du mir kurz sagst, welchen Stack du nutzt (oder den Inhalt von `package.json` und dem Test-Ordner postest), passe ich die Datei exakt an. Dann kann ich auch Lint, Playwright-E2E-Tests oder einen Smoke-Test gegen die Preview-URL einbauen.
+1. Cloudflare: create the Pages project once, with production branch `main`:
+   `bunx wrangler pages project create hydraumatics-store --production-branch=main`
+2. Cloudflare: create an API token with *Account > Cloudflare Pages > Edit* (add *D1 > Edit* if migrations should run).
+3. GitHub > Settings > Secrets and variables > Actions:
+   - Secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`
+   - Variables: `PUBLIC_SHOPIFY_DOMAIN`, `PUBLIC_SHOPIFY_STOREFRONT_TOKEN` (public by design), optional `PUBLIC_SHOPIFY_API_VERSION`, `SITE_URL`
+   - Optional variable `D1_MIGRATIONS=true` once the `[[d1_databases]]` block in `wrangler.toml` is enabled.
+4. Runtime secrets for the Functions (`WEB3FORMS_KEY`, `ADMIN_TOKEN`, ...) stay in Cloudflare, see `wrangler.toml`.
+5. Turn off Cloudflare's own Git build for this repo, otherwise every push deploys twice.
+6. Attach `hgdmachines.online` under Pages > Custom domains.
 
+## Run the same checks locally
 
-
+    bun install
+    bun run check && bun run test
+    bunx playwright install --with-deps && bun run test:e2e

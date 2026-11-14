@@ -1,6 +1,6 @@
 // Converts every video in media-src/ into web-ready files in public/media/:
 //   <name>.webm (VP9, smallest, modern browsers) + <name>.mp4 (H.264, works everywhere) + <name>.jpg (poster frame)
-// Needs ffmpeg installed (https://ffmpeg.org). Run: npm run media
+// Needs ffmpeg installed (https://ffmpeg.org). Run: bun run media
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { basename, extname, join } from "node:path";

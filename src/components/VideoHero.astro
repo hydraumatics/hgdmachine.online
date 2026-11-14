@@ -1,7 +1,7 @@
 ---
 // Decorative looping background video: WebM first (small), MP4 fallback, poster image while loading.
 // Accessible: muted, no audio, hidden from screen readers, has a Pause button (WCAG 2.2.2), respects "reduce motion".
-// Create the files with `npm run media` (see media-src/README.md).
+// Create the files with `bun run media` (see media-src/README.md).
 interface Props { name: string; class?: string }
 const { name, class: className = "" } = Astro.props;
 const base = `/media/${name}`;

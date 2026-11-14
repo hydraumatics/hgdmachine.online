@@ -6,7 +6,7 @@ export default defineConfig({
   use: { baseURL: "http://localhost:4321", trace: "on-first-retry" },
   // Build with the built-in sample catalogue (PUBLIC_SHOPIFY_DOMAIN=mock); Shopify calls are intercepted in the tests.
   webServer: {
-    command: "npm run build && npm run preview -- --port 4321",
+    command: "bun run build && bun run preview --port 4321",
     url: "http://localhost:4321",
     reuseExistingServer: !process.env.CI,
     timeout: 300_000,
