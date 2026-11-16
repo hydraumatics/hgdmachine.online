@@ -77,7 +77,7 @@ const links = [["/#divisions", "What we supply"], ["/shop", "Shop"], ["/#how", "
       </div>
     </div>
 
-    <header class="bg-brand text-brand-foreground sticky top-0 z-30">
+    <header class="bg-brand text-brand-foreground border-primary/50 sticky top-0 z-30 border-b">
       <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2">
         <div class="flex items-center gap-1">
           <SheetTrigger asChild for="nav-sheet" class="inline-flex md:hidden">
@@ -99,7 +99,7 @@ const links = [["/#divisions", "What we supply"], ["/shop", "Shop"], ["/#how", "
 
     <main id="main" tabindex="-1" class="flex-1 outline-none"><slot /></main>
 
-    <footer class:list={["bg-brand text-brand-foreground mt-16", mobileCta && "pb-20 md:pb-0"]}>
+    <footer class:list={["bg-brand text-brand-foreground border-primary mt-16 border-t-2", mobileCta && "pb-20 md:pb-0"]}>
       <div class="mx-auto grid max-w-6xl gap-8 px-5 py-10 text-sm [overflow-wrap:anywhere] sm:grid-cols-2 lg:grid-cols-4">
         <div><div class="mb-3"><Logo /></div><p class="text-xs opacity-70">A division of Hydraumatics Africa Services</p><p class="font-heading text-primary mt-2 text-lg font-bold">Keeping operations moving across Africa.</p><p class="mt-2 opacity-85">Headquarters: Choma · Kitwe · Lusaka, Zambia<br />Serving Lusaka, the Copperbelt, Solwezi and the wider region.</p></div>
         <div><p class="font-semibold">Contact</p><ul class="mt-2 space-y-0.5 opacity-90"><li><a class="underline" href="tel:+260954381230">Phone: +260 95 438 1230</a></li><li><a class="underline" href="https://wa.me/260954381230" rel="noopener">WhatsApp chat</a></li><li><a class="underline" href="mailto:procurement@hgdmachines.online">Quotes: procurement@hgdmachines.online</a></li><li><a class="underline" href="mailto:sales@hgdmachines.online">Sales: sales@hgdmachines.online</a></li><li><a class="underline" href="mailto:support@hgdmachines.online">Support: support@hgdmachines.online</a></li><li><a class="underline" href="mailto:info@hgdmachines.online">General: info@hgdmachines.online</a></li></ul></div>
