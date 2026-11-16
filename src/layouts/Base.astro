@@ -83,7 +83,7 @@ const links = [["/#divisions", "What we supply"], ["/shop", "Shop"], ["/#how", "
           <SheetTrigger asChild for="nav-sheet" class="inline-flex md:hidden">
             <Button variant="ghost" size="icon" aria-label="Open menu" class="text-brand-foreground hover:bg-white/10"><Menu class="size-6" aria-hidden="true" /></Button>
           </SheetTrigger>
-          <a href="/" class="ml-1 inline-flex min-h-11 items-center" aria-label="Hydraumatics General Dealers, home"><Logo /></a>
+          <a href="/" class="ml-1 inline-flex min-h-11 items-center" aria-label="Hydraumatics General Dealers, home"><Logo class="max-[399px]:[&_.wordmark]:sr-only" /></a>
         </div>
         <nav aria-label="Main" class="hidden md:block">
           <ul class="flex gap-6 font-medium">{links.map(([href, label]) => <li><a class="inline-block py-2 opacity-90 hover:opacity-100 hover:underline" href={href}>{label}</a></li>)}</ul>
@@ -100,7 +100,7 @@ const links = [["/#divisions", "What we supply"], ["/shop", "Shop"], ["/#how", "
     <main id="main" tabindex="-1" class="flex-1 outline-none"><slot /></main>
 
     <footer class:list={["bg-brand text-brand-foreground mt-16", mobileCta && "pb-20 md:pb-0"]}>
-      <div class="mx-auto grid max-w-6xl gap-8 px-5 py-10 text-sm sm:grid-cols-2 lg:grid-cols-4">
+      <div class="mx-auto grid max-w-6xl gap-8 px-5 py-10 text-sm [overflow-wrap:anywhere] sm:grid-cols-2 lg:grid-cols-4">
         <div><div class="mb-3"><Logo /></div><p class="text-xs opacity-70">A division of Hydraumatics Africa Services</p><p class="font-heading text-primary mt-2 text-lg font-bold">Keeping operations moving across Africa.</p><p class="mt-2 opacity-85">Headquarters: Choma · Kitwe · Lusaka, Zambia<br />Serving Lusaka, the Copperbelt, Solwezi and the wider region.</p></div>
         <div><p class="font-semibold">Contact</p><ul class="mt-2 space-y-0.5 opacity-90"><li><a class="underline" href="tel:+260954381230">Phone: +260 95 438 1230</a></li><li><a class="underline" href="https://wa.me/260954381230" rel="noopener">WhatsApp chat</a></li><li><a class="underline" href="mailto:procurement@hgdmachines.online">Quotes: procurement@hgdmachines.online</a></li><li><a class="underline" href="mailto:sales@hgdmachines.online">Sales: sales@hgdmachines.online</a></li><li><a class="underline" href="mailto:support@hgdmachines.online">Support: support@hgdmachines.online</a></li><li><a class="underline" href="mailto:info@hgdmachines.online">General: info@hgdmachines.online</a></li></ul></div>
         <div><p class="font-semibold">Shop and company</p><ul class="mt-2 space-y-0.5 opacity-90"><li><a class="underline" href="/shop">Catalogue</a></li><li><a class="underline" href="/#quote">Request a quote</a></li><li><a class="underline" href="/contact">Contact</a></li><li><a class="underline" href="/newsletter">Newsletter</a></li></ul></div>

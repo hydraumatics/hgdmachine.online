@@ -20,7 +20,7 @@ test("add a product with insurance cover: cart opens, announces, lists both line
 
   const cart = page.getByRole("dialog", { name: "Your cart" });
   await expect(cart).toBeVisible();
-  await expect(cart.getByText("Hydraulic pumps")).toBeVisible();
+  await expect(cart.getByRole("link", { name: "Hydraulic pumps" })).toBeVisible();
   await expect(cart.getByText("Covers: Hydraulic pumps")).toBeVisible();
   await expect(cart.getByRole("link", { name: "Checkout securely" })).toHaveAttribute("href", "https://mock.example/checkout");
 
