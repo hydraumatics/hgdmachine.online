@@ -39,7 +39,9 @@ test("structured data on the home page is valid JSON and names the organisation"
   await page.goto("/");
   const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();
   expect(blocks.length).toBeGreaterThan(0);
-  const types = blocks.flatMap((b) => { const j = JSON.parse(b); return [j["@type"]].flat(); });
+  // The home page publishes one block with an "@graph"; other pages publish a single object.
+  const nodes = blocks.flatMap((b) => { const j = JSON.parse(b); return j["@graph"] ?? [j]; });
+  const types = nodes.flatMap((n) => [n["@type"]].flat());
   expect(types).toContain("Organization");
 });
 

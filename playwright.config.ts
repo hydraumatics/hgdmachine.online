@@ -3,6 +3,8 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "tests",
   retries: process.env.CI ? 1 : 0,
+  // In CI: failed tests show up as annotations and in the job summary (see tests/summary-reporter.mjs).
+  reporter: process.env.CI ? [["list"], ["github"], ["html", { open: "never" }], ["./tests/summary-reporter.mjs"]] : "list",
   use: { baseURL: "http://localhost:4321", trace: "on-first-retry" },
   // Build with the built-in sample catalogue (PUBLIC_SHOPIFY_DOMAIN=mock); Shopify calls are intercepted in the tests.
   webServer: {
