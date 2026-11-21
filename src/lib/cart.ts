@@ -41,7 +41,10 @@ function announce(message: string): void {
 }
 
 export function openCart(): void {
-  if (!document.querySelector("#cart-sheet dialog[open]")) document.querySelector<HTMLElement>("[data-open-cart]")?.click();
+  if (document.querySelector("#cart-sheet dialog[open]")) return;
+  const opener = document.querySelector<HTMLElement>("[data-open-cart]");
+  opener?.focus(); // a script click does not move focus; without this, closing the cart would not return focus to the Cart button
+  opener?.click();
 }
 
 export async function addToCart(lines: NewLine[]): Promise<void> {
@@ -107,6 +110,15 @@ export function initCart(): void {
       if (!b) return;
       const q = Number(b.dataset.q), act = b.dataset.act;
       change(b.dataset.id as string, act === "rm" ? 0 : act === "inc" ? q + 1 : q - 1).catch(() => announce("Could not update your cart. Please try again."));
+    });
+  }
+  const sheet = document.querySelector<HTMLDialogElement>("#cart-sheet dialog");
+  if (sheet && !sheet.dataset.focusBound) {
+    sheet.dataset.focusBound = "1";
+    // Safety net: if focus was lost when the cart closed (e.g. Safari does not focus buttons on click), put it back on the Cart button.
+    sheet.addEventListener("close", () => {
+      const active = document.activeElement;
+      if (!active || active === document.body) document.querySelector<HTMLElement>("[data-open-cart]")?.focus();
     });
   }
   if (!inited) { inited = true; void loadCart(); } else render(); // no refetch on page transitions
