@@ -55,13 +55,13 @@ export async function guard(request, env, route, { max = 8, windowSec = 3600 } =
 }
 
 /** Optional transactional email through Resend (needs RESEND_API_KEY and MAIL_FROM on a verified domain). */
-export async function sendEmail(env, { to, subject, html, replyTo }) {
+export async function sendEmail(env, { to, subject, html, text, replyTo }) {
   if (!env.RESEND_API_KEY || !env.MAIL_FROM) return false;
   try {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
-      body: JSON.stringify({ from: env.MAIL_FROM, to: [to], subject, html, ...(replyTo ? { reply_to: replyTo } : {}) }),
+      body: JSON.stringify({ from: env.MAIL_FROM, to: [to], subject, html, ...(text ? { text } : {}), ...(replyTo ? { reply_to: replyTo } : {}) }),
     });
     if (!r.ok) console.log("Resend error", r.status, await r.text().catch(() => ""));
     return r.ok;

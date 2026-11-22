@@ -1,6 +1,7 @@
 // POST /api/quote: stores the customer + request in D1, emails the team, optionally acknowledges the customer.
 // Env: DB (D1 binding), WEB3FORMS_KEY or RESEND_API_KEY+MAIL_FROM, optional STAFF_EMAIL, IP_SALT
 import { EMAIL_RE, clip, esc, guard, makeRef, makeReply, nowIso, notifyStaff, sendEmail } from "../../server/shared.js";
+import { quoteAcknowledgement, quoteNotification } from "../../server/emails.js";
 
 const UPSERT_CONTACT = `INSERT INTO contacts (email, name, company, phone) VALUES (?1, ?2, ?3, ?4)
   ON CONFLICT(email) DO UPDATE SET name = excluded.name, company = excluded.company,
@@ -34,16 +35,13 @@ export async function onRequestPost(ctx) {
     } catch (e) { console.log("D1 write failed:", String(e)); }
   }
 
-  const text = [`Reference: ${ref}`, `Name and title: ${d.name}`, `Company or site: ${d.company}`, `Email: ${d.email}`, `Phone: ${d.phone || "-"}`,
-    `Delivery terms: ${d.delivery}`, `Urgency: ${d.urgency}`, "Consent: given (Privacy notice)", "", "Requirement:", d.details].join("\n");
-  const notified = await notifyStaff(env, { to: env.STAFF_EMAIL || "procurement@hgdmachines.online", replyTo: d.email, name: d.name, email: d.email, web3formsKey: env.WEB3FORMS_KEY,
-    subject: `${d.urgency.startsWith("Urgent") ? "[URGENT] " : ""}Quote request ${ref}: ${d.company}`, text });
+  const staff = quoteNotification({ ...d, ref });
+  const notified = await notifyStaff(env, { to: env.STAFF_EMAIL || "procurement@hgdmachines.online", replyTo: d.email, name: d.name, email: d.email, web3formsKey: env.WEB3FORMS_KEY, subject: staff.subject, text: staff.text });
 
   if (!stored && !notified) return reply("err", "We could not send your request. Please email <a href='mailto:procurement@hgdmachines.online'>procurement@hgdmachines.online</a>.");
   if (!stored) console.log(`Quote ${ref} was emailed but NOT stored: check the D1 binding`);
 
-  ctx.waitUntil(sendEmail(env, { to: d.email, replyTo: "procurement@hgdmachines.online", subject: `We received your request ${ref}`,
-    html: `<p>Hello ${esc(d.name)},</p><p>Thank you for contacting Hydraumatics General Dealers. We received your request (reference <b>${ref}</b>) and will reply by email, usually within one working day.</p><p>This is an automatic acknowledgement, not a quotation or order confirmation.</p>` }));
+  ctx.waitUntil(sendEmail(env, { to: d.email, replyTo: "procurement@hgdmachines.online", ...quoteAcknowledgement({ ...d, ref }) }));
   return reply("ok", `Thank you, ${esc(d.name)}. Your request reference is <b>${ref}</b>. We will reply by email shortly.`, true);
 }
 export const onRequest = () => new Response("Method not allowed", { status: 405 });

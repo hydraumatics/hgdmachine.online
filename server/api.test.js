@@ -86,6 +86,11 @@ describe("POST /api/quote", () => {
     const tos = requests.map((r) => r.body.to[0]);
     expect(tos).toContain("procurement@hgdmachines.online");
     expect(tos).toContain("ada@mine.co.zm");
+    const customer = requests.find((r) => r.body.to[0] === "ada@mine.co.zm").body;
+    expect(customer.subject).toMatch(/^We have received your request HYD-/);
+    expect(customer.html).toContain("What happens next");
+    expect(customer.text).toContain("Hello Ada Mwansa,");
+    expect(customer.reply_to).toBe("procurement@hgdmachines.online");
   });
   it("rejects other methods with 405", () => expect(quoteOther().status).toBe(405));
 });
@@ -102,8 +107,23 @@ describe("POST /api/newsletter", () => {
       expect(upsert(db)).toBeUndefined();
     }
   });
-  it("reports a missing database instead of pretending to subscribe", async () => {
+  it("reports a missing database and a missing email channel instead of pretending to subscribe", async () => {
     expect(await (await newsletter(context(post("/api/newsletter", valid), {}))).text()).toContain("could not sign you up");
+  });
+  it("without a database, still passes the signup to the team by email", async () => {
+    const requests = await withFetch(() => jsonResponse({ success: true }), async () => {
+      const res = await newsletter(context(post("/api/newsletter", valid), { WEB3FORMS_KEY: "w" }));
+      const body = await res.text();
+      expect(body).toContain("We have your sign-up");
+      expect(res.headers.get("X-Sent")).toBe("1");
+    });
+    expect(requests[0].body.subject).toContain("not stored");
+    expect(requests[0].body.message).toContain("buyer@example.com");
+  });
+  it("without a database and when the email also fails, shows the error", async () => {
+    await withFetch(() => jsonResponse({ success: false }), async () => {
+      expect(await (await newsletter(context(post("/api/newsletter", valid), { WEB3FORMS_KEY: "w" }))).text()).toContain("could not sign you up");
+    });
   });
   it("keeps only known interests and stores the consent proof (single opt-in)", async () => {
     const db = upsertDb("subscribed");

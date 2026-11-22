@@ -1,6 +1,7 @@
 // POST /api/newsletter: stores the subscriber and the proof of consent in D1.
 // With RESEND_API_KEY + MAIL_FROM: double opt-in (confirmation email). Without: single opt-in, and the team is notified.
 import { EMAIL_RE, clip, esc, guard, makeReply, nowIso, notifyStaff, randomToken, sendEmail } from "../../server/shared.js";
+import { newsletterConfirmation } from "../../server/emails.js";
 
 const INTERESTS = ["Hydraulics and drivetrain", "Heavy machinery", "Spare parts", "Consumables", "Power and solar", "Safety supplies"];
 const UPSERT = `INSERT INTO newsletter_subscribers (email, name, interests, status, consent_text, consent_at, confirm_token, unsub_token, confirmed_at)
@@ -27,7 +28,16 @@ export async function onRequestPost(ctx) {
   const email = clip(f.get("email"), 160).toLowerCase(), name = clip(f.get("name"), 120);
   const interests = f.getAll("interest").map((x) => clip(x, 60)).filter((x) => INTERESTS.includes(x));
   if (!EMAIL_RE.test(email) || f.get("consent") !== "yes") return reply("err", "Please enter a valid email address and tick the box to give your consent.");
-  if (!env.DB) { console.log("Newsletter: D1 binding DB is missing"); return reply("err", "We could not sign you up just now. Please email <a href='mailto:news@hgdmachines.online'>news@hgdmachines.online</a>."); }
+  if (!env.DB) {
+    // No database yet: do not lose the signup. The team gets it by email and adds it by hand.
+    console.log("Newsletter: D1 binding DB is missing, sending the signup by email only");
+    const consentNote = `Consent given on ${nowIso()} to: "Send me the Hydraumatics General Dealers newsletter" (Newsletter terms and Privacy notice).`;
+    const sent = await notifyStaff(env, { to: "news@hgdmachines.online", subject: "Newsletter signup (not stored: add by hand)", name: name || "Subscriber", email,
+      web3formsKey: env.NEWSLETTER_WEB3FORMS_KEY || env.WEB3FORMS_KEY, text: [`Email: ${email}`, `Name: ${name || "-"}`, `Interests: ${interests.join(", ") || "-"}`, consentNote].join("\n") });
+    return sent
+      ? reply("ok", `Thank you${name ? ", " + esc(name) : ""}. We have your sign-up. You can unsubscribe at any time by emailing <a href='mailto:news@hgdmachines.online'>news@hgdmachines.online</a>.`, true)
+      : reply("err", "We could not sign you up just now. Please email <a href='mailto:news@hgdmachines.online'>news@hgdmachines.online</a>.");
+  }
 
   const doubleOptIn = Boolean(env.RESEND_API_KEY && env.MAIL_FROM);
   const now = nowIso();
@@ -37,8 +47,7 @@ export async function onRequestPost(ctx) {
     const row = await env.DB.prepare(UPSERT).bind(email, name, interests.join(", "), doubleOptIn ? "pending" : "subscribed", consent, now, doubleOptIn ? confirmToken : null, randomToken(), doubleOptIn ? null : now).first();
     const origin = new URL(request.url).origin;
     if (doubleOptIn && row.status === "pending") {
-      ctx.waitUntil(sendEmail(env, { to: email, subject: "Please confirm your subscription", replyTo: "news@hgdmachines.online",
-        html: `<p>Hello${name ? " " + esc(name) : ""},</p><p>Please confirm that you want to receive the Hydraumatics General Dealers newsletter:</p><p><a href="${origin}/api/newsletter/confirm?t=${row.confirm_token}">Confirm my subscription</a></p><p>If you did not ask for this, ignore this email and you will not be subscribed.</p>` }));
+      ctx.waitUntil(sendEmail(env, { to: email, replyTo: "news@hgdmachines.online", ...newsletterConfirmation({ name, link: `${origin}/api/newsletter/confirm?t=${row.confirm_token}` }) }));
       return reply("ok", "Thank you. Please check your inbox and confirm your subscription.", true);
     }
     if (!doubleOptIn) ctx.waitUntil(notifyStaff(env, { to: "news@hgdmachines.online", subject: "Newsletter signup", name: name || "Subscriber", email, web3formsKey: env.NEWSLETTER_WEB3FORMS_KEY || env.WEB3FORMS_KEY, text: [`Email: ${email}`, `Name: ${name || "-"}`, `Interests: ${interests.join(", ") || "-"}`, consent].join("\n") }));

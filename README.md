@@ -99,3 +99,7 @@ Newsletters themselves are sent from your own tool: export `subscribers&status=s
 
 ## Status
 Written without being able to install packages or run a build. First run: `bun install`, `bun run check`, `bun run dev`, then the tests. Send any errors back and they get fixed.
+
+## Emails
+
+Every email the site sends is written in `server/emails.js`. `EMAILS.md` shows what goes out (made-up data). After changing the wording, run `bun run emails` and commit both files. Customer emails need `RESEND_API_KEY` and `MAIL_FROM`; the team notification also works with `WEB3FORMS_KEY`.
