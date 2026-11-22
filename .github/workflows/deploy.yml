@@ -17,8 +17,9 @@ permissions:
 
 env:
   # Public build-time settings (see .env.production.example). Set them under Settings > Secrets and variables > Actions > Variables.
-  PUBLIC_SHOPIFY_DOMAIN: ${{ vars.PUBLIC_SHOPIFY_DOMAIN }}
-  PUBLIC_SHOPIFY_STOREFRONT_TOKEN: ${{ vars.PUBLIC_SHOPIFY_STOREFRONT_TOKEN }}
+  # Read from Variables or from Secrets (either works). Use the value "mock" for both to build with the sample catalogue.
+  PUBLIC_SHOPIFY_DOMAIN: ${{ vars.PUBLIC_SHOPIFY_DOMAIN || secrets.PUBLIC_SHOPIFY_DOMAIN }}
+  PUBLIC_SHOPIFY_STOREFRONT_TOKEN: ${{ vars.PUBLIC_SHOPIFY_STOREFRONT_TOKEN || secrets.PUBLIC_SHOPIFY_STOREFRONT_TOKEN }}
   PUBLIC_SHOPIFY_API_VERSION: ${{ vars.PUBLIC_SHOPIFY_API_VERSION || '2026-07' }}
   SITE_URL: ${{ vars.SITE_URL || 'https://hgdmachines.online' }}
 
@@ -69,6 +70,16 @@ jobs:
       - run: bun run test:e2e --project=${{ matrix.project }}
         env:
           CI: "true" # playwright.config.ts builds with the mock catalogue and serves the site itself
+      - name: Show build errors (runs only if something failed)
+        if: failure()
+        env:
+          PUBLIC_SHOPIFY_DOMAIN: mock
+          PUBLIC_SHOPIFY_STOREFRONT_TOKEN: mock
+        run: |
+          bun run build > build.log 2>&1 || {
+            { echo '### Build output (last 60 lines)'; echo '```'; tail -n 60 build.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=Build failed::$(tail -n 10 build.log | tr '\n' ' ' | cut -c1-900)"
+          }
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -94,7 +105,16 @@ jobs:
           node-version-file: .nvmrc
       - run: bun install --frozen-lockfile
       - name: Build (converts images first, see "prebuild")
-        run: bun run build # real Shopify catalogue; the build fails on purpose if Shopify is unreachable
+        # Real Shopify catalogue; the build fails on purpose if Shopify is unreachable. Errors are copied into the run summary.
+        run: |
+          set +e
+          bun run build 2>&1 | tee build.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            { echo '### Build failed'; echo '```'; tail -n 60 build.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=Build failed::$(tail -n 10 build.log | tr '\n' ' ' | cut -c1-900)"
+          fi
+          exit $code
 
       - name: Apply D1 migrations
         # Set the repository variable D1_MIGRATIONS=true after the [[d1_databases]] block in wrangler.toml is enabled.
@@ -113,4 +133,3 @@ jobs:
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           # Publishes ./dist plus the functions/ folder. The production branch of the Pages project must be "main".
           command: pages deploy dist --project-name=hydraumatics-store --branch=${{ github.head_ref || github.ref_name }} --commit-hash=${{ github.sha }}
-
