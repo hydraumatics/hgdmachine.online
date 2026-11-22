@@ -132,4 +132,4 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           # Publishes ./dist plus the functions/ folder. The production branch of the Pages project must be "main".
-          command: pages deploy dist --project-name=hydraumatics-store --branch=${{ github.head_ref || github.ref_name }} --commit-hash=${{ github.sha }}
+          command: pages deploy dist --project-name=hydraumatics-site --branch=${{ github.head_ref || github.ref_name }} --commit-hash=${{ github.sha }}

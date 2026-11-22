@@ -1,6 +1,6 @@
 # Cloudflare Pages project configuration. Read by Cloudflare Git builds and by `wrangler pages ...`.
 # NEVER put secrets in this file: it is committed to Git.
-name = "hydraumatics-store"
+name = "hydraumatics-site"
 pages_build_output_dir = "./dist"
 compatibility_date = "2026-10-01"
 
@@ -19,11 +19,11 @@ MAIL_FROM = "Hydraumatics General Dealers <noreply@hgdmachines.online>" # only u
 # migrations_dir = "migrations"
 
 # ---- SECRETS (set once, never committed) ----
-#   bunx wrangler pages secret put WEB3FORMS_KEY            --project-name hydraumatics-store   # quote emails (Option B)
-#   bunx wrangler pages secret put NEWSLETTER_WEB3FORMS_KEY --project-name hydraumatics-store   # optional, signups to news@
-#   bunx wrangler pages secret put RESEND_API_KEY           --project-name hydraumatics-store   # better email (Option A)
-#   bunx wrangler pages secret put ADMIN_TOKEN              --project-name hydraumatics-store   # enables /api/admin/export
-#   bunx wrangler pages secret put IP_SALT                  --project-name hydraumatics-store   # any long random string
+#   bunx wrangler pages secret put WEB3FORMS_KEY            --project-name hydraumatics-site   # quote emails (Option B)
+#   bunx wrangler pages secret put NEWSLETTER_WEB3FORMS_KEY --project-name hydraumatics-site   # optional, signups to news@
+#   bunx wrangler pages secret put RESEND_API_KEY           --project-name hydraumatics-site   # better email (Option A)
+#   bunx wrangler pages secret put ADMIN_TOKEN              --project-name hydraumatics-site   # enables /api/admin/export
+#   bunx wrangler pages secret put IP_SALT                  --project-name hydraumatics-site   # any long random string
 # (or: Cloudflare dashboard > Workers & Pages > your project > Settings > Variables and Secrets)
 #
 # ---- BUILD-TIME settings for Astro (public by design) go in `.env.production`, see `.env.production.example` ----
